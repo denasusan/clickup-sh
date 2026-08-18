@@ -17,12 +17,26 @@ export default function EditProfileModal({
   const router = useRouter();
   const supabase = createClient();
   const [fullName, setFullName] = useState(currentName);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!fullName.trim()) return;
+
+    if (newPassword || confirmPassword) {
+      if (newPassword.length < 6) {
+        setError("Password baru minimal 6 karakter.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setError("Konfirmasi password tidak cocok.");
+        return;
+      }
+    }
+
     setSaving(true);
     setError(null);
 
@@ -31,12 +45,24 @@ export default function EditProfileModal({
       .update({ full_name: fullName.trim() })
       .eq("id", userId);
 
-    setSaving(false);
     if (updateError) {
+      setSaving(false);
       setError(updateError.message);
       return;
     }
 
+    if (newPassword) {
+      const { error: passwordError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (passwordError) {
+        setSaving(false);
+        setError(passwordError.message);
+        return;
+      }
+    }
+
+    setSaving(false);
     onClose();
     router.refresh();
   }
@@ -71,6 +97,28 @@ export default function EditProfileModal({
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               placeholder="Nama lengkap kamu"
             />
+          </div>
+
+          <div className="border-t border-gray-100 pt-3">
+            <p className="mb-2 text-xs font-medium text-gray-600">
+              Ganti password (opsional)
+            </p>
+            <div className="space-y-2">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                placeholder="Password baru (minimal 6 karakter)"
+              />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                placeholder="Konfirmasi password baru"
+              />
+            </div>
           </div>
 
           {error && (
