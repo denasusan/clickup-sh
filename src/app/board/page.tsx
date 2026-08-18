@@ -27,8 +27,8 @@ export default async function BoardPage() {
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single()
-    .returns<Profile>();
+    .returns<Profile[]>()
+    .single();
 
   return (
     <Board

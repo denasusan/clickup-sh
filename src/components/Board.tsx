@@ -193,8 +193,8 @@ export default function Board({
         .update(payload)
         .eq("id", modalState.task.id)
         .select()
-        .single()
-        .returns<Task>();
+        .returns<Task[]>()
+        .single();
       if (!error && data) {
         setTasks((current) => current.map((t) => (t.id === data.id ? data : t)));
       }
@@ -211,8 +211,8 @@ export default function Board({
           created_by: currentUser.id,
         })
         .select()
-        .single()
-        .returns<Task>();
+        .returns<Task[]>()
+        .single();
       if (!error && data) {
         setTasks((current) => [...current, data]);
       }
