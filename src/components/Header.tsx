@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Profile, Workspace, WorkspaceRole } from "@/types/database";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import MembersModal from "./MembersModal";
+import EditProfileModal from "./EditProfileModal";
 
 export default function Header({
   currentUser,
@@ -40,6 +41,7 @@ export default function Header({
   const router = useRouter();
   const supabase = createClient();
   const [showMembers, setShowMembers] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -125,12 +127,13 @@ export default function Header({
           <Users size={14} />
           <span className="hidden sm:inline">Anggota</span>
         </button>
-        <div
-          title={currentUser.full_name ?? currentUser.email}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700"
+        <button
+          onClick={() => setShowEditProfile(true)}
+          title={`Edit profil (${currentUser.full_name ?? currentUser.email})`}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 transition hover:ring-2 hover:ring-brand-300"
         >
           {(currentUser.full_name ?? currentUser.email).slice(0, 1).toUpperCase()}
-        </div>
+        </button>
         <button
           onClick={handleSignOut}
           title="Keluar"
@@ -149,6 +152,14 @@ export default function Header({
           myRole={myRole}
           currentUserId={currentUser.id}
           onClose={() => setShowMembers(false)}
+        />
+      )}
+
+      {showEditProfile && (
+        <EditProfileModal
+          userId={currentUser.id}
+          currentName={currentUser.full_name ?? ""}
+          onClose={() => setShowEditProfile(false)}
         />
       )}
     </header>
