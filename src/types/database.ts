@@ -1,5 +1,6 @@
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
+export type TaskTeam = "product" | "marketing" | "operasional" | "it" | "program";
 export type WorkspaceRole = "owner" | "member";
 
 export interface Profile {
@@ -13,6 +14,7 @@ export interface Profile {
 export interface Workspace {
   id: string;
   name: string;
+  join_code: string;
   created_by: string | null;
   created_at: string;
 }
@@ -41,6 +43,7 @@ export interface Task {
   priority: TaskPriority;
   assignee_id: string | null;
   due_date: string | null;
+  team: TaskTeam | null;
   position: number;
   created_by: string | null;
   created_at: string;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { X, Trash2 } from "lucide-react";
-import type { Profile, Task, TaskPriority, TaskStatus } from "@/types/database";
+import type { Profile, Task, TaskPriority, TaskStatus, TaskTeam } from "@/types/database";
 import TaskComments from "./TaskComments";
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
@@ -16,6 +16,14 @@ const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: "medium", label: "Sedang" },
   { value: "high", label: "Tinggi" },
   { value: "urgent", label: "Mendesak" },
+];
+
+const TEAM_OPTIONS: { value: TaskTeam; label: string }[] = [
+  { value: "product", label: "Product" },
+  { value: "marketing", label: "Marketing" },
+  { value: "operasional", label: "Operasional" },
+  { value: "it", label: "IT" },
+  { value: "program", label: "Program" },
 ];
 
 export default function TaskModal({
@@ -41,6 +49,7 @@ export default function TaskModal({
   const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "medium");
   const [assigneeId, setAssigneeId] = useState<string>(task?.assignee_id ?? "");
   const [dueDate, setDueDate] = useState<string>(task?.due_date ?? "");
+  const [team, setTeam] = useState<TaskTeam | "">(task?.team ?? "");
   const [saving, setSaving] = useState(false);
 
   const profilesById = useMemo(() => {
@@ -68,6 +77,7 @@ export default function TaskModal({
       priority,
       assignee_id: assigneeId || null,
       due_date: dueDate || null,
+      team: team || null,
     });
     setSaving(false);
   }
@@ -78,7 +88,7 @@ export default function TaskModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -121,7 +131,7 @@ export default function TaskModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">
                 Status
@@ -156,7 +166,7 @@ export default function TaskModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">
                 Ditugaskan ke
@@ -187,31 +197,49 @@ export default function TaskModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              Request dari tim
+            </label>
+            <select
+              value={team}
+              onChange={(e) => setTeam(e.target.value as TaskTeam | "")}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="">Pilih tim</option>
+              {TEAM_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             {task ? (
               <button
                 type="button"
                 onClick={() => onDelete(task.id)}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50 sm:justify-start"
               >
                 <Trash2 size={14} />
                 Hapus task
               </button>
             ) : (
-              <span />
+              <span className="hidden sm:inline" />
             )}
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                className="flex-1 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 sm:flex-none"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
+                className="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60 sm:flex-none"
               >
                 {saving ? "Menyimpan..." : task ? "Simpan" : "Tambah Task"}
               </button>

@@ -28,7 +28,7 @@ export default function Column({
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <div className="flex w-80 shrink-0 flex-col rounded-2xl bg-gray-100/70 p-3">
+    <div className="flex w-[85vw] max-w-80 shrink-0 flex-col rounded-2xl bg-gray-100/70 p-3 sm:w-80">
       <div className="mb-3 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${accentClassName}`} />

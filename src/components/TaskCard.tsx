@@ -22,6 +22,14 @@ const PRIORITY_LABEL: Record<Task["priority"], string> = {
   urgent: "Mendesak",
 };
 
+const TEAM_LABEL: Record<NonNullable<Task["team"]>, string> = {
+  product: "Product",
+  marketing: "Marketing",
+  operasional: "Operasional",
+  it: "IT",
+  program: "Program",
+};
+
 export default function TaskCard({
   task,
   assignee,
@@ -72,6 +80,12 @@ export default function TaskCard({
 
       {task.description && (
         <p className="mb-2 line-clamp-2 text-xs text-gray-500">{task.description}</p>
+      )}
+
+      {task.team && (
+        <span className="mb-2 inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+          {TEAM_LABEL[task.team]}
+        </span>
       )}
 
       <div className="flex items-center justify-between">

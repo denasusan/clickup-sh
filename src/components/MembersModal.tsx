@@ -2,18 +2,20 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { X, UserMinus } from "lucide-react";
+import { X, UserMinus, Copy, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, WorkspaceRole } from "@/types/database";
 
 export default function MembersModal({
   workspaceId,
+  joinCode,
   members,
   myRole,
   currentUserId,
   onClose,
 }: {
   workspaceId: string;
+  joinCode: string;
   members: { profile: Profile; role: WorkspaceRole }[];
   myRole: WorkspaceRole;
   currentUserId: string;
@@ -24,6 +26,13 @@ export default function MembersModal({
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopyCode() {
+    await navigator.clipboard.writeText(joinCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   async function handleInvite(e: FormEvent) {
     e.preventDefault();
@@ -123,6 +132,30 @@ export default function MembersModal({
             </li>
           ))}
         </ul>
+
+        {myRole === "owner" && (
+          <div className="mb-4 rounded-lg bg-gray-50 p-3">
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              Kode undangan workspace
+            </label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold uppercase tracking-widest text-gray-700">
+                {joinCode}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-500 transition hover:bg-white"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-gray-400">
+              Bagikan kode ini ke orang yang mau kamu ajak; mereka bisa gabung lewat
+              tombol &quot;Gabung workspace&quot; saat pertama kali login.
+            </p>
+          </div>
+        )}
 
         {myRole === "owner" ? (
           <form onSubmit={handleInvite} className="space-y-2 border-t border-gray-100 pt-4">

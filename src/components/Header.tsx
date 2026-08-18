@@ -48,15 +48,15 @@ export default function Header({
   }
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-6 py-4">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-3 py-3 sm:px-6 sm:py-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
           FS
         </div>
         <WorkspaceSwitcher workspace={workspace} workspaces={workspaces} />
       </div>
 
-      <div className="flex flex-1 items-center gap-3 md:max-w-xl">
+      <div className="order-3 flex w-full flex-col gap-2 sm:order-none sm:w-auto sm:flex-1 sm:flex-row sm:items-center sm:gap-3 md:max-w-xl">
         <div className="relative flex-1">
           <Search
             size={15}
@@ -72,7 +72,7 @@ export default function Header({
         <select
           value={assigneeFilter}
           onChange={(e) => onAssigneeFilterChange(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 sm:w-auto"
         >
           <option value="all">Semua anggota</option>
           <option value="unassigned">Belum ditugaskan</option>
@@ -84,60 +84,67 @@ export default function Header({
         </select>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3">
         <button
           onClick={onOpenImport}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+          title="Impor"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
         >
           <Upload size={14} />
-          Impor
+          <span className="hidden sm:inline">Impor</span>
         </button>
         <button
           onClick={onExport}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+          title="Ekspor"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
         >
           <Download size={14} />
-          Ekspor
+          <span className="hidden sm:inline">Ekspor</span>
         </button>
         <button
           onClick={onOpenCalendar}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+          title="Kalender"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
         >
           <CalendarDays size={14} />
-          Kalender
+          <span className="hidden sm:inline">Kalender</span>
         </button>
         <button
           onClick={onOpenDashboard}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+          title="Dashboard"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
         >
           <BarChart3 size={14} />
-          Dashboard
+          <span className="hidden sm:inline">Dashboard</span>
         </button>
         <button
           onClick={() => setShowMembers(true)}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+          title="Anggota"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
         >
           <Users size={14} />
-          Anggota
+          <span className="hidden sm:inline">Anggota</span>
         </button>
         <div
           title={currentUser.full_name ?? currentUser.email}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700"
         >
           {(currentUser.full_name ?? currentUser.email).slice(0, 1).toUpperCase()}
         </div>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+          title="Keluar"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
         >
           <LogOut size={14} />
-          Keluar
+          <span className="hidden sm:inline">Keluar</span>
         </button>
       </div>
 
       {showMembers && (
         <MembersModal
           workspaceId={workspace.id}
+          joinCode={workspace.join_code}
           members={members}
           myRole={myRole}
           currentUserId={currentUser.id}

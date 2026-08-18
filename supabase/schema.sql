@@ -423,3 +423,56 @@ begin
     alter publication supabase_realtime add table public.task_comments;
   end if;
 end $$;
+
+-- ---------------------------------------------------------
+-- 10. Kolom "tim asal" pada task
+-- ---------------------------------------------------------
+alter table public.tasks add column if not exists team text
+  check (team in ('product', 'marketing', 'operasional', 'it', 'program'));
+
+-- ---------------------------------------------------------
+-- 11. Kode undangan workspace (supaya user baru bisa gabung ke
+--     workspace yang sudah ada, bukan cuma bikin workspace baru
+--     saat pertama kali login)
+-- ---------------------------------------------------------
+alter table public.workspaces add column if not exists join_code text;
+
+update public.workspaces
+  set join_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
+  where join_code is null;
+
+alter table public.workspaces
+  alter column join_code set default upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
+  alter column join_code set not null;
+
+create unique index if not exists workspaces_join_code_idx on public.workspaces (join_code);
+
+-- Security definer supaya user yang belum jadi anggota tetap bisa "menebus"
+-- kode undangan (insert ke workspace_members) tanpa perlu policy insert
+-- baru yang mengizinkan sembarang user insert dirinya sendiri.
+create or replace function public.join_workspace_by_code(_code text)
+returns table (id uuid, name text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  _workspace record;
+begin
+  select w.id, w.name into _workspace
+  from public.workspaces w
+  where w.join_code = upper(trim(_code));
+
+  if _workspace.id is null then
+    raise exception 'Kode workspace tidak ditemukan';
+  end if;
+
+  insert into public.workspace_members (workspace_id, user_id, role)
+  values (_workspace.id, auth.uid(), 'member')
+  on conflict (workspace_id, user_id) do nothing;
+
+  return query select _workspace.id, _workspace.name;
+end;
+$$;
+
+grant execute on function public.join_workspace_by_code(text) to authenticated;
