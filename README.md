@@ -1,6 +1,6 @@
-# TeamFlow
+# Flowspace
 
-Aplikasi task management sederhana ala ClickUp untuk tim kecil: kanban board (drag & drop), assign task ke anggota tim, deadline, prioritas, dan update **realtime** — begitu satu orang mengubah task, semua anggota tim lain langsung melihat perubahannya tanpa refresh.
+Aplikasi task management untuk tim kecil: kanban board (drag & drop), assign task ke anggota tim, deadline, prioritas, dan update **realtime** — begitu satu orang mengubah task, semua anggota tim lain langsung melihat perubahannya tanpa refresh.
 
 Dibangun dengan **Next.js 14 (App Router) + TypeScript + Tailwind CSS + Supabase** (database, auth, realtime), siap deploy ke **Vercel**.
 
@@ -27,13 +27,13 @@ Login mendukung **Google** dan **email/password**.
 2. Buka **APIs & Services → OAuth consent screen** → pilih **External** → isi nama app, email, dll → simpan.
 3. Buka **APIs & Services → Credentials** → **Create Credentials → OAuth client ID** → tipe **Web application**.
 4. Isi:
-   - **Authorized JavaScript origins**: `http://localhost:3000` dan URL Vercel kamu nanti (misal `https://teamflow-kamu.vercel.app`)
+   - **Authorized JavaScript origins**: `http://localhost:3000` dan URL Vercel kamu nanti (misal `https://flowspace-kamu.vercel.app`)
    - **Authorized redirect URIs**: `https://<PROJECT-REF>.supabase.co/auth/v1/callback` (lihat PROJECT-REF di Project Settings → API → Project URL)
 5. Setelah dibuat, copy **Client ID** dan **Client Secret**.
 6. Di Supabase Dashboard → **Authentication → Providers → Google** → aktifkan (Enable) → paste Client ID & Client Secret → **Save**.
 7. Di Supabase Dashboard → **Authentication → URL Configuration**:
    - **Site URL**: isi dengan URL Vercel kamu nanti (untuk sekarang bisa `http://localhost:3000` dulu, update lagi setelah deploy).
-   - **Redirect URLs**: tambahkan `http://localhost:3000/auth/callback` dan `https://teamflow-kamu.vercel.app/auth/callback`.
+   - **Redirect URLs**: tambahkan `http://localhost:3000/auth/callback` dan `https://flowspace-kamu.vercel.app/auth/callback`.
 
 > Kalau belum sempat setup Google, tidak masalah — form login **email & password** tetap berfungsi penuh tanpa langkah di atas. Kamu bisa aktifkan Google kapan saja nanti.
 
@@ -70,21 +70,30 @@ Buka [http://localhost:3000](http://localhost:3000).
 3. Saat konfigurasi, tambahkan **Environment Variables**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. Klik **Deploy**. Setelah selesai, kamu akan dapat URL seperti `https://teamflow-kamu.vercel.app`.
+4. Klik **Deploy**. Setelah selesai, kamu akan dapat URL seperti `https://flowspace-kamu.vercel.app`.
 5. Kembali ke Supabase → **Authentication → URL Configuration** → update **Site URL** dan **Redirect URLs** dengan URL Vercel yang sebenarnya (lihat langkah 2.7).
 6. Kalau pakai Google login, update juga **Authorized JavaScript origins** di Google Cloud Console dengan URL Vercel-nya.
 
-Selesai — bagikan link Vercel-nya ke anggota tim, mereka tinggal daftar/login dan langsung bisa pakai board yang sama secara realtime.
+Selesai — bagikan link Vercel-nya ke anggota tim, mereka tinggal daftar/login, buat/join workspace, dan langsung bisa pakai board secara realtime.
+
+> **Catatan migrasi**: kalau project Supabase kamu sudah punya data lama (dari sebelum fitur workspace/board ada), re-run `supabase/schema.sql` akan menambah kolom `board_id` ke `tasks` tanpa mengisi nilainya. Task lama itu jadi tidak terlihat sampai kamu set `board_id`-nya secara manual ke board baru.
 
 ---
 
 ## Fitur
 
 - Login email/password + Google OAuth (Supabase Auth)
-- Satu board bersama untuk seluruh tim (semua user yang login melihat data yang sama)
+- Multi-workspace: tiap tim punya workspace sendiri, bisa gabung banyak workspace sekaligus
+- Multi-board per workspace, dengan tab untuk pindah antar board
+- Undang anggota ke workspace lewat email (role owner/member), owner bisa keluarkan anggota
 - 3 kolom: **Belum Dikerjakan / Sedang Dikerjakan / Selesai**
 - Drag & drop task antar kolom dan reorder dalam kolom
 - Tambah / edit / hapus task: judul, deskripsi, prioritas, assignee, tenggat waktu
+- Komentar per task (realtime, hapus komentar sendiri)
+- Dashboard tim per board: jumlah task per status untuk tiap anggota (juga tampil sebagai panel tetap di sisi kanan board, sekalian jadi filter cepat per anggota)
+- Kalender bulanan: task ditampilkan di tanggal tenggatnya, klik task buka detail/edit
+- Impor task dari CSV (export Excel/Google Sheets) - dengan preview & validasi sebelum disimpan
+- Ekspor semua task di board jadi CSV (buat dokumentasi/laporan/backup)
 - Pencarian task & filter berdasarkan anggota tim
 - Update realtime — perubahan dari satu user langsung tampil ke semua user lain
 - Badge tenggat waktu yang lewat (overdue) berwarna merah
@@ -96,24 +105,34 @@ src/
   app/
     login/page.tsx        -> halaman login (Google + email/password)
     auth/callback/route.ts -> handler OAuth callback
-    board/page.tsx         -> halaman board (server component, fetch data awal)
+    board/page.tsx                          -> redirect ke workspace pertama, atau onboarding buat workspace
+    board/new/page.tsx                      -> buat workspace baru
+    board/[workspaceId]/page.tsx            -> redirect ke board pertama, atau prompt buat board
+    board/[workspaceId]/[boardId]/page.tsx  -> halaman board (server component, fetch data awal)
   components/
-    Board.tsx    -> logic utama: drag & drop, realtime, CRUD task
-    Column.tsx   -> satu kolom kanban
-    TaskCard.tsx -> kartu task
-    TaskModal.tsx-> form tambah/edit task
-    Header.tsx   -> search, filter, sign out
+    Board.tsx        -> logic utama: drag & drop, realtime, CRUD task
+    BoardTabs.tsx     -> tab pindah/buat board dalam satu workspace
+    WorkspaceSwitcher.tsx -> dropdown pindah/buat workspace
+    MembersModal.tsx  -> undang/keluarkan anggota workspace
+    Column.tsx        -> satu kolom kanban
+    TaskCard.tsx      -> kartu task
+    TaskModal.tsx     -> form tambah/edit task
+    TaskComments.tsx  -> daftar & form komentar per task (realtime)
+    TeamDashboard.tsx -> dashboard (modal) jumlah task per status per anggota
+    TeamSummarySidebar.tsx -> panel ringkasan tim tetap di sisi kanan board
+    CalendarView.tsx  -> kalender bulanan, task ditampilkan di tanggal tenggat
+    ImportTasksModal.tsx -> impor task dari file CSV
+    Header.tsx        -> workspace switcher, search, filter, kalender, dashboard, impor, anggota, sign out
   lib/supabase/  -> client Supabase (browser, server, middleware)
 supabase/schema.sql -> skema database + RLS policies
 ```
 
 ## Ide pengembangan lanjutan
 
-- Tambah komentar per task
 - Tambah lampiran file (pakai Supabase Storage)
-- Multi-board / multi-workspace per tim
-- Notifikasi email saat ditugaskan task baru
-- Tampilan kalender/timeline
+- Notifikasi email saat ditugaskan task baru atau dikomentari
+- Tampilan timeline/Gantt (perlu tambah kolom tanggal mulai, saat ini task cuma punya tenggat)
+- Undang anggota yang belum punya akun lewat link/email invite (saat ini undang hanya bisa untuk user yang sudah terdaftar)
 
 ---
 

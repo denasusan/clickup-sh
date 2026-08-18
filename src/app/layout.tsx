@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TeamFlow",
-  description: "Papan kerja tim sederhana - kanban board untuk task management.",
+  title: "Flowspace",
+  description: "Papan kerja tim - kanban board untuk task management.",
 };
 
 export default function RootLayout({

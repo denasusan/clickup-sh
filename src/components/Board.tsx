@@ -13,18 +13,39 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/client";
-import type { Profile, Task, TaskStatus } from "@/types/database";
+import type {
+  Board as BoardType,
+  Profile,
+  Task,
+  TaskPriority,
+  TaskStatus,
+  Workspace,
+  WorkspaceRole,
+} from "@/types/database";
 import Header from "./Header";
+import BoardTabs from "./BoardTabs";
 import Column from "./Column";
 import TaskCard from "./TaskCard";
 import TaskModal from "./TaskModal";
+import TeamDashboard from "./TeamDashboard";
+import ImportTasksModal from "./ImportTasksModal";
+import TeamSummarySidebar from "./TeamSummarySidebar";
+import CalendarView from "./CalendarView";
 
 const COLUMNS: { id: TaskStatus; title: string; accent: string }[] = [
   { id: "todo", title: "Belum Dikerjakan", accent: "bg-gray-400" },
   { id: "in_progress", title: "Sedang Dikerjakan", accent: "bg-amber-400" },
   { id: "done", title: "Selesai", accent: "bg-emerald-500" },
 ];
+
+const PRIORITY_LABEL: Record<TaskPriority, string> = {
+  low: "Rendah",
+  medium: "Sedang",
+  high: "Tinggi",
+  urgent: "Mendesak",
+};
 
 interface CurrentUser {
   id: string;
@@ -34,24 +55,40 @@ interface CurrentUser {
 }
 
 export default function Board({
+  workspace,
+  workspaces,
+  board,
+  boards,
+  members,
+  myRole,
   initialTasks,
-  profiles,
   currentUser,
 }: {
+  workspace: Workspace;
+  workspaces: Workspace[];
+  board: BoardType;
+  boards: BoardType[];
+  members: { profile: Profile; role: WorkspaceRole }[];
+  myRole: WorkspaceRole;
   initialTasks: Task[];
-  profiles: Profile[];
   currentUser: CurrentUser;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [search, setSearch] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [modalState, setModalState] = useState<{
     open: boolean;
     task: Task | null;
     defaultStatus: TaskStatus;
   }>({ open: false, task: null, defaultStatus: "todo" });
+
+  const profiles = useMemo(() => members.map((m) => m.profile), [members]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -63,13 +100,17 @@ export default function Board({
     return map;
   }, [profiles]);
 
-  // --- Realtime: dengar perubahan task dari anggota tim lain ---
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks, board.id]);
+
+  // --- Realtime: dengar perubahan task di board ini dari anggota tim lain ---
   useEffect(() => {
     const channel = supabase
-      .channel("tasks-realtime")
+      .channel(`tasks-realtime-${board.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
+        { event: "*", schema: "public", table: "tasks", filter: `board_id=eq.${board.id}` },
         (payload) => {
           setTasks((current) => {
             if (payload.eventType === "INSERT") {
@@ -94,13 +135,75 @@ export default function Board({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase]);
+  }, [supabase, board.id]);
+
+  // --- Jumlah komentar per task, dipakai untuk badge di kartu ---
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCounts() {
+      const taskIds = tasks.map((t) => t.id);
+      if (taskIds.length === 0) {
+        if (!cancelled) setCommentCounts({});
+        return;
+      }
+      const { data } = await supabase
+        .from("task_comments")
+        .select("task_id")
+        .in("task_id", taskIds)
+        .returns<{ task_id: string }[]>();
+      if (cancelled || !data) return;
+      const counts: Record<string, number> = {};
+      for (const row of data) counts[row.task_id] = (counts[row.task_id] ?? 0) + 1;
+      setCommentCounts(counts);
+    }
+    loadCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, tasks.map((t) => t.id).join(",")]);
+
+  useEffect(() => {
+    const taskIds = new Set(tasks.map((t) => t.id));
+    const channel = supabase
+      .channel(`task-comments-counts-${board.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "task_comments" },
+        (payload) => {
+          const row = payload.new as { task_id: string };
+          if (!taskIds.has(row.task_id)) return;
+          setCommentCounts((current) => ({
+            ...current,
+            [row.task_id]: (current[row.task_id] ?? 0) + 1,
+          }));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "task_comments" },
+        (payload) => {
+          const row = payload.old as { task_id: string };
+          if (!taskIds.has(row.task_id)) return;
+          setCommentCounts((current) => ({
+            ...current,
+            [row.task_id]: Math.max(0, (current[row.task_id] ?? 1) - 1),
+          }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, board.id, tasks.map((t) => t.id).join(",")]);
 
   const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
     return tasks.filter((t) => {
       const matchSearch = !query || t.title.toLowerCase().includes(query);
-      const matchAssignee = assigneeFilter === "all" || t.assignee_id === assigneeFilter;
+      const matchAssignee =
+        assigneeFilter === "all" ||
+        (assigneeFilter === "unassigned" ? t.assignee_id === null : t.assignee_id === assigneeFilter);
       return matchSearch && matchAssignee;
     });
   }, [tasks, search, assigneeFilter]);
@@ -207,6 +310,7 @@ export default function Board({
         .insert({
           ...payload,
           status,
+          board_id: board.id,
           position: maxPosition + 1,
           created_by: currentUser.id,
         })
@@ -226,16 +330,68 @@ export default function Board({
     closeModal();
   }
 
+  function handleExportCsv() {
+    const statusLabelByKey: Record<TaskStatus, string> = {
+      todo: COLUMNS[0].title,
+      in_progress: COLUMNS[1].title,
+      done: COLUMNS[2].title,
+    };
+
+    const rows = tasks
+      .slice()
+      .sort((a, b) => {
+        const statusDiff = COLUMNS.findIndex((c) => c.id === a.status) - COLUMNS.findIndex((c) => c.id === b.status);
+        return statusDiff !== 0 ? statusDiff : a.position - b.position;
+      })
+      .map((t) => {
+        const assignee = t.assignee_id ? profilesById[t.assignee_id] : null;
+        const creator = t.created_by ? profilesById[t.created_by] : null;
+        return {
+          judul: t.title,
+          deskripsi: t.description ?? "",
+          status: statusLabelByKey[t.status],
+          prioritas: PRIORITY_LABEL[t.priority],
+          ditugaskan_ke: assignee?.full_name ?? assignee?.email ?? "",
+          email_assignee: assignee?.email ?? "",
+          tenggat: t.due_date ?? "",
+          dibuat_oleh: creator?.full_name ?? creator?.email ?? "",
+          dibuat_pada: new Date(t.created_at).toLocaleString("id-ID"),
+          diperbarui_pada: new Date(t.updated_at).toLocaleString("id-ID"),
+        };
+      });
+
+    // Titik-koma, bukan koma - default pemisah CSV di Excel lokal Indonesia/Eropa,
+    // supaya kolom kebaca kesebar (bukan numpuk jadi satu) waktu file dibuka.
+    const csv = Papa.unparse(rows, { delimiter: ";" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    a.download = `${board.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-tasks-${dateStamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="flex h-screen flex-col bg-[#f4f5fb]">
       <Header
         currentUser={currentUser}
-        profiles={profiles}
+        workspace={workspace}
+        workspaces={workspaces}
+        members={members}
+        myRole={myRole}
         search={search}
         onSearchChange={setSearch}
         assigneeFilter={assigneeFilter}
         onAssigneeFilterChange={setAssigneeFilter}
+        onOpenDashboard={() => setShowDashboard(true)}
+        onOpenImport={() => setShowImport(true)}
+        onExport={handleExportCsv}
+        onOpenCalendar={() => setShowCalendar(true)}
       />
+
+      <BoardTabs workspaceId={workspace.id} boards={boards} activeBoardId={board.id} />
 
       <DndContext
         sensors={sensors}
@@ -244,19 +400,29 @@ export default function Board({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex flex-1 gap-4 overflow-x-auto p-6">
-          {COLUMNS.map((col) => (
-            <Column
-              key={col.id}
-              id={col.id}
-              title={col.title}
-              tasks={grouped[col.id]}
-              profilesById={profilesById}
-              onAddTask={() => openCreateModal(col.id)}
-              onTaskClick={openEditModal}
-              accentClassName={col.accent}
-            />
-          ))}
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 gap-4 overflow-x-auto p-6">
+            {COLUMNS.map((col) => (
+              <Column
+                key={col.id}
+                id={col.id}
+                title={col.title}
+                tasks={grouped[col.id]}
+                profilesById={profilesById}
+                commentCounts={commentCounts}
+                onAddTask={() => openCreateModal(col.id)}
+                onTaskClick={openEditModal}
+                accentClassName={col.accent}
+              />
+            ))}
+          </div>
+
+          <TeamSummarySidebar
+            tasks={tasks}
+            members={members}
+            assigneeFilter={assigneeFilter}
+            onSelectAssignee={setAssigneeFilter}
+          />
         </div>
 
         <DragOverlay>
@@ -265,6 +431,7 @@ export default function Board({
               <TaskCard
                 task={activeTask}
                 assignee={activeTask.assignee_id ? profilesById[activeTask.assignee_id] ?? null : null}
+                commentCount={commentCounts[activeTask.id] ?? 0}
                 dragging
               />
             </div>
@@ -277,9 +444,48 @@ export default function Board({
           task={modalState.task}
           defaultStatus={modalState.defaultStatus}
           profiles={profiles}
+          currentUser={currentUser}
           onClose={closeModal}
           onSave={handleSaveTask}
           onDelete={handleDeleteTask}
+        />
+      )}
+
+      {showDashboard && (
+        <TeamDashboard
+          board={board}
+          tasks={tasks}
+          members={members}
+          onClose={() => setShowDashboard(false)}
+        />
+      )}
+
+      {showImport && (
+        <ImportTasksModal
+          boardId={board.id}
+          tasks={tasks}
+          members={members}
+          onClose={() => setShowImport(false)}
+          onImported={(imported) => {
+            setTasks((current) => {
+              const existingIds = new Set(current.map((t) => t.id));
+              const merged = [...current];
+              for (const t of imported) if (!existingIds.has(t.id)) merged.push(t);
+              return merged;
+            });
+          }}
+        />
+      )}
+
+      {showCalendar && (
+        <CalendarView
+          tasks={tasks}
+          profilesById={profilesById}
+          onTaskClick={(task) => {
+            setShowCalendar(false);
+            openEditModal(task);
+          }}
+          onClose={() => setShowCalendar(false)}
         />
       )}
     </div>

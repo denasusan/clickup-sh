@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import Board from "@/components/Board";
-import type { Profile, Task } from "@/types/database";
+import WorkspaceOnboarding from "@/components/WorkspaceOnboarding";
+import type { Workspace } from "@/types/database";
 
-export default async function BoardPage() {
+export default async function BoardIndexPage() {
   const supabase = createClient();
 
   const {
@@ -14,32 +14,20 @@ export default async function BoardPage() {
     redirect("/login");
   }
 
-  const [{ data: profiles }, { data: tasks }] = await Promise.all([
-    supabase.from("profiles").select("*").order("full_name").returns<Profile[]>(),
-    supabase
-      .from("tasks")
-      .select("*")
-      .order("position", { ascending: true })
-      .returns<Task[]>(),
-  ]);
+  const { data: memberships } = await supabase
+    .from("workspace_members")
+    .select("workspace_id, workspaces(id, name, created_by, created_at)")
+    .eq("user_id", user.id)
+    .order("created_at", { referencedTable: "workspaces", ascending: true })
+    .returns<{ workspace_id: string; workspaces: Workspace | null }[]>();
 
-  const { data: currentProfile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .returns<Profile[]>()
-    .single();
+  const workspaces = (memberships ?? [])
+    .map((m) => m.workspaces)
+    .filter((w): w is Workspace => Boolean(w));
 
-  return (
-    <Board
-      initialTasks={tasks ?? []}
-      profiles={profiles ?? []}
-      currentUser={{
-        id: user.id,
-        email: user.email ?? "",
-        full_name: currentProfile?.full_name ?? null,
-        avatar_url: currentProfile?.avatar_url ?? null,
-      }}
-    />
-  );
+  if (workspaces.length > 0) {
+    redirect(`/board/${workspaces[0].id}`);
+  }
+
+  return <WorkspaceOnboarding />;
 }

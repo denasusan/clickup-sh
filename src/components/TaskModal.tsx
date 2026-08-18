@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { X, Trash2 } from "lucide-react";
 import type { Profile, Task, TaskPriority, TaskStatus } from "@/types/database";
+import TaskComments from "./TaskComments";
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: "todo", label: "Belum Dikerjakan" },
@@ -21,6 +22,7 @@ export default function TaskModal({
   task,
   defaultStatus,
   profiles,
+  currentUser,
   onClose,
   onSave,
   onDelete,
@@ -28,6 +30,7 @@ export default function TaskModal({
   task: Task | null;
   defaultStatus: TaskStatus;
   profiles: Profile[];
+  currentUser: { id: string; email: string; full_name: string | null };
   onClose: () => void;
   onSave: (payload: Partial<Task> & { title: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -39,6 +42,12 @@ export default function TaskModal({
   const [assigneeId, setAssigneeId] = useState<string>(task?.assignee_id ?? "");
   const [dueDate, setDueDate] = useState<string>(task?.due_date ?? "");
   const [saving, setSaving] = useState(false);
+
+  const profilesById = useMemo(() => {
+    const map: Record<string, Profile> = {};
+    for (const p of profiles) map[p.id] = p;
+    return map;
+  }, [profiles]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -209,6 +218,12 @@ export default function TaskModal({
             </div>
           </div>
         </form>
+
+        {task && (
+          <div className="mt-5">
+            <TaskComments taskId={task.id} profilesById={profilesById} currentUser={currentUser} />
+          </div>
+        )}
       </div>
     </div>
   );

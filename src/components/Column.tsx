@@ -11,6 +11,7 @@ export default function Column({
   title,
   tasks,
   profilesById,
+  commentCounts,
   onAddTask,
   onTaskClick,
   accentClassName,
@@ -19,6 +20,7 @@ export default function Column({
   title: string;
   tasks: Task[];
   profilesById: Record<string, Profile>;
+  commentCounts: Record<string, number>;
   onAddTask: () => void;
   onTaskClick: (task: Task) => void;
   accentClassName: string;
@@ -56,6 +58,7 @@ export default function Column({
               key={task.id}
               task={task}
               assignee={task.assignee_id ? profilesById[task.assignee_id] ?? null : null}
+              commentCount={commentCounts[task.id] ?? 0}
               onClick={() => onTaskClick(task)}
             />
           ))}

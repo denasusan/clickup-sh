@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { format, isPast, isToday } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import clsx from "clsx";
-import { Calendar } from "lucide-react";
+import { Calendar, MessageSquare } from "lucide-react";
 import type { Profile, Task } from "@/types/database";
 
 const PRIORITY_STYLES: Record<Task["priority"], string> = {
@@ -25,11 +25,13 @@ const PRIORITY_LABEL: Record<Task["priority"], string> = {
 export default function TaskCard({
   task,
   assignee,
+  commentCount = 0,
   onClick,
   dragging,
 }: {
   task: Task;
   assignee: Profile | null;
+  commentCount?: number;
   onClick?: () => void;
   dragging?: boolean;
 }) {
@@ -73,19 +75,25 @@ export default function TaskCard({
       )}
 
       <div className="flex items-center justify-between">
-        {task.due_date ? (
-          <span
-            className={clsx(
-              "flex items-center gap-1 text-[11px]",
-              overdue ? "font-medium text-red-600" : "text-gray-400"
-            )}
-          >
-            <Calendar size={12} />
-            {format(new Date(task.due_date), "d MMM", { locale: idLocale })}
-          </span>
-        ) : (
-          <span />
-        )}
+        <div className="flex items-center gap-2">
+          {task.due_date && (
+            <span
+              className={clsx(
+                "flex items-center gap-1 text-[11px]",
+                overdue ? "font-medium text-red-600" : "text-gray-400"
+              )}
+            >
+              <Calendar size={12} />
+              {format(new Date(task.due_date), "d MMM", { locale: idLocale })}
+            </span>
+          )}
+          {commentCount > 0 && (
+            <span className="flex items-center gap-1 text-[11px] text-gray-400">
+              <MessageSquare size={12} />
+              {commentCount}
+            </span>
+          )}
+        </div>
 
         {assignee && (
           <div
