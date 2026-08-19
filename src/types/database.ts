@@ -30,6 +30,7 @@ export interface Board {
   id: string;
   workspace_id: string;
   name: string;
+  position: number;
   created_by: string | null;
   created_at: string;
 }

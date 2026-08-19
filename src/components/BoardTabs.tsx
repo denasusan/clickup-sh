@@ -1,12 +1,68 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Plus, X } from "lucide-react";
 import clsx from "clsx";
 import { createClient } from "@/lib/supabase/client";
 import type { Board } from "@/types/database";
+
+function SortableBoardTab({
+  board,
+  workspaceId,
+  active,
+}: {
+  board: Board;
+  workspaceId: string;
+  active: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: board.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Link
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      href={`/board/${workspaceId}/${board.id}`}
+      onClick={(e) => {
+        if (isDragging) e.preventDefault();
+      }}
+      className={clsx(
+        "cursor-grab select-none rounded-lg px-3 py-1.5 text-xs font-medium transition active:cursor-grabbing",
+        isDragging && "opacity-50",
+        active
+          ? "bg-brand-50 text-brand-700"
+          : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+      )}
+    >
+      {board.name}
+    </Link>
+  );
+}
 
 export default function BoardTabs({
   workspaceId,
@@ -19,9 +75,38 @@ export default function BoardTabs({
 }) {
   const router = useRouter();
   const supabase = createClient();
+  const [orderedBoards, setOrderedBoards] = useState(boards);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setOrderedBoards(boards);
+  }, [boards]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = orderedBoards.findIndex((b) => b.id === active.id);
+    const newIndex = orderedBoards.findIndex((b) => b.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(orderedBoards, oldIndex, newIndex).map((b, index) => ({
+      ...b,
+      position: index,
+    }));
+    setOrderedBoards(reordered);
+
+    await Promise.all(
+      reordered.map((b) => supabase.from("boards").update({ position: b.position }).eq("id", b.id))
+    );
+    router.refresh();
+  }
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -32,9 +117,11 @@ export default function BoardTabs({
       data: { user },
     } = await supabase.auth.getUser();
 
+    const maxPosition = orderedBoards.reduce((max, b) => Math.max(max, b.position), -1);
+
     const { data, error } = await supabase
       .from("boards")
-      .insert({ name: name.trim(), workspace_id: workspaceId, created_by: user?.id })
+      .insert({ name: name.trim(), workspace_id: workspaceId, created_by: user?.id, position: maxPosition + 1 })
       .select()
       .returns<Board[]>()
       .single();
@@ -50,20 +137,15 @@ export default function BoardTabs({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 border-b border-gray-200 bg-white px-6 py-2">
-      {boards.map((b) => (
-        <Link
-          key={b.id}
-          href={`/board/${workspaceId}/${b.id}`}
-          className={clsx(
-            "rounded-lg px-3 py-1.5 text-xs font-medium transition",
-            b.id === activeBoardId
-              ? "bg-brand-50 text-brand-700"
-              : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-          )}
-        >
-          {b.name}
-        </Link>
-      ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={orderedBoards.map((b) => b.id)} strategy={horizontalListSortingStrategy}>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {orderedBoards.map((b) => (
+              <SortableBoardTab key={b.id} board={b} workspaceId={workspaceId} active={b.id === activeBoardId} />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {creating ? (
         <form onSubmit={handleCreate} className="flex items-center gap-1">
@@ -95,7 +177,7 @@ export default function BoardTabs({
       ) : (
         <button
           onClick={() => setCreating(true)}
-          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-400 transition hover:bg-gray-100 hover:text-brand-600"
+          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-100"
         >
           <Plus size={13} />
           Board

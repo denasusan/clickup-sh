@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { X, Trash2 } from "lucide-react";
-import type { Profile, Task, TaskPriority, TaskStatus, TaskTeam } from "@/types/database";
+import type { Board, Profile, Task, TaskPriority, TaskStatus, TaskTeam } from "@/types/database";
 import TaskComments from "./TaskComments";
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
@@ -31,6 +31,8 @@ export default function TaskModal({
   defaultStatus,
   profiles,
   currentUser,
+  boards,
+  currentBoardId,
   onClose,
   onSave,
   onDelete,
@@ -39,6 +41,8 @@ export default function TaskModal({
   defaultStatus: TaskStatus;
   profiles: Profile[];
   currentUser: { id: string; email: string; full_name: string | null };
+  boards: Board[];
+  currentBoardId: string;
   onClose: () => void;
   onSave: (payload: Partial<Task> & { title: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -50,6 +54,7 @@ export default function TaskModal({
   const [assigneeId, setAssigneeId] = useState<string>(task?.assignee_id ?? "");
   const [dueDate, setDueDate] = useState<string>(task?.due_date ?? "");
   const [team, setTeam] = useState<TaskTeam | "">(task?.team ?? "");
+  const [boardId, setBoardId] = useState<string>(task?.board_id ?? currentBoardId);
   const [saving, setSaving] = useState(false);
 
   const profilesById = useMemo(() => {
@@ -78,6 +83,7 @@ export default function TaskModal({
       assignee_id: assigneeId || null,
       due_date: dueDate || null,
       team: team || null,
+      ...(task ? { board_id: boardId } : {}),
     });
     setSaving(false);
   }
@@ -214,6 +220,30 @@ export default function TaskModal({
               ))}
             </select>
           </div>
+
+          {task && boards.length > 1 && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">
+                Board
+              </label>
+              <select
+                value={boardId}
+                onChange={(e) => setBoardId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              >
+                {boards.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+              {boardId !== task.board_id && (
+                <p className="mt-1 text-[11px] text-amber-600">
+                  Task akan dipindahkan ke board ini setelah disimpan.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             {task ? (

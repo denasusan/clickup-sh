@@ -299,7 +299,11 @@ export default function Board({
         .returns<Task[]>()
         .single();
       if (!error && data) {
-        setTasks((current) => current.map((t) => (t.id === data.id ? data : t)));
+        setTasks((current) =>
+          data.board_id !== board.id
+            ? current.filter((t) => t.id !== data.id)
+            : current.map((t) => (t.id === data.id ? data : t))
+        );
       }
     } else {
       const status = (payload.status as TaskStatus) ?? modalState.defaultStatus;
@@ -445,6 +449,8 @@ export default function Board({
           defaultStatus={modalState.defaultStatus}
           profiles={profiles}
           currentUser={currentUser}
+          boards={boards}
+          currentBoardId={board.id}
           onClose={closeModal}
           onSave={handleSaveTask}
           onDelete={handleDeleteTask}
@@ -466,8 +472,9 @@ export default function Board({
           tasks={tasks}
           members={members}
           onClose={() => setShowImport(false)}
-          onImported={(imported) => {
+          onImported={(imported, replacedExisting) => {
             setTasks((current) => {
+              if (replacedExisting) return imported;
               const existingIds = new Set(current.map((t) => t.id));
               const merged = [...current];
               for (const t of imported) if (!existingIds.has(t.id)) merged.push(t);

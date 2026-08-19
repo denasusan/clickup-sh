@@ -55,7 +55,7 @@ export default async function BoardPage({
       .from("boards")
       .select("*")
       .eq("workspace_id", params.workspaceId)
-      .order("created_at", { ascending: true })
+      .order("position", { ascending: true })
       .returns<BoardType[]>(),
     supabase
       .from("workspace_members")

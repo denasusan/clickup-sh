@@ -476,3 +476,65 @@ end;
 $$;
 
 grant execute on function public.join_workspace_by_code(text) to authenticated;
+
+-- ---------------------------------------------------------
+-- 12. Board bawaan hasil migrasi tracker dari spreadsheet
+--     (satu board per sheet). Dibuat di workspace pertama yang ada -
+--     kalau kamu punya lebih dari satu workspace dan mau targetkan
+--     yang lain, ganti "order by created_at asc limit 1" di bawah
+--     jadi "where name = 'Nama Workspace Kamu'".
+-- ---------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'boards_workspace_id_name_key'
+  ) then
+    alter table public.boards add constraint boards_workspace_id_name_key unique (workspace_id, name);
+  end if;
+end $$;
+
+insert into public.boards (workspace_id, name, created_by)
+select w.id, b.name, w.created_by
+from (select id, created_by from public.workspaces order by created_at asc limit 1) w
+cross join (
+  values
+    ('Fixing Bug/Request'),
+    ('Withdrawal System'),
+    ('Tip operational donation'),
+    ('Migrasi Verified WhatsApp'),
+    ('Waku'),
+    ('Daku'),
+    ('New Payment Method'),
+    ('Integrasi Zains'),
+    ('Multi currency'),
+    ('Finishing Mobile App Android'),
+    ('Multi language'),
+    ('Blog')
+) as b(name)
+on conflict (workspace_id, name) do nothing;
+
+-- ---------------------------------------------------------
+-- 13. Urutan board bisa diatur manual (drag & drop tab board)
+-- ---------------------------------------------------------
+alter table public.boards add column if not exists position double precision not null default 0;
+
+-- Backfill urutan awal berdasarkan created_at, tapi cuma untuk workspace yang
+-- belum pernah diatur manual (semua board-nya masih position default/sama) -
+-- supaya aman dijalankan ulang tanpa menimpa urutan yang sudah di-drag user.
+with needs_backfill as (
+  select workspace_id
+  from public.boards
+  group by workspace_id
+  having count(distinct position) <= 1
+),
+ranked as (
+  select id, row_number() over (partition by workspace_id order by created_at asc) - 1 as rn
+  from public.boards
+  where workspace_id in (select workspace_id from needs_backfill)
+)
+update public.boards b
+set position = ranked.rn
+from ranked
+where b.id = ranked.id;
+
+create index if not exists boards_workspace_id_position_idx on public.boards (workspace_id, position);

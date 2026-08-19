@@ -33,7 +33,7 @@ export default async function WorkspaceBoardsPage({
     .from("boards")
     .select("*")
     .eq("workspace_id", params.workspaceId)
-    .order("created_at", { ascending: true })
+    .order("position", { ascending: true })
     .returns<Board[]>();
 
   if (boards && boards.length > 0) {
