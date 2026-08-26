@@ -468,7 +468,7 @@ begin
   end if;
 
   insert into public.workspace_members (workspace_id, user_id, role)
-  values (_workspace.id, auth.uid(), 'member')
+  values (_workspace.id, auth.uid(), 'requester')
   on conflict (workspace_id, user_id) do nothing;
 
   return query select _workspace.id, _workspace.name;
