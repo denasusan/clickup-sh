@@ -157,29 +157,27 @@ export default function MembersModal({
           ))}
         </ul>
 
-        {myRole === "owner" && (
-          <div className="mb-4 rounded-lg bg-gray-50 p-3">
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              Kode undangan workspace
-            </label>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold uppercase tracking-widest text-gray-700">
-                {joinCode}
-              </code>
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-500 transition hover:bg-white"
-              >
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-              </button>
-            </div>
-            <p className="mt-1 text-[11px] text-gray-400">
-              Bagikan kode ini ke orang yang mau kamu ajak; mereka bisa gabung lewat
-              tombol &quot;Gabung workspace&quot; saat pertama kali login.
-            </p>
+        <div className="mb-4 rounded-lg bg-gray-50 p-3">
+          <label className="mb-1 block text-xs font-medium text-gray-600">
+            Kode undangan workspace
+          </label>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold uppercase tracking-widest text-gray-700">
+              {joinCode}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-500 transition hover:bg-white"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
           </div>
-        )}
+          <p className="mt-1 text-[11px] text-gray-400">
+            Bagikan kode ini ke orang yang mau kamu ajak; mereka bisa gabung lewat
+            tombol &quot;Gabung workspace&quot; saat pertama kali login.
+          </p>
+        </div>
 
         {myRole === "owner" ? (
           <form onSubmit={handleInvite} className="space-y-2 border-t border-gray-100 pt-4">
