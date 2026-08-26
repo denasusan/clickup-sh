@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BarChart3, CalendarDays, Download, LogOut, PlusCircle, Search, Upload, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Workspace, WorkspaceRole } from "@/types/database";
+import Logo from "./Logo";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import MembersModal from "./MembersModal";
 import EditProfileModal from "./EditProfileModal";
@@ -54,9 +55,7 @@ export default function Header({
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-3 py-3 sm:px-6 sm:py-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
-          FS
-        </div>
+        <Logo className="h-9 w-9 shrink-0" />
         <WorkspaceSwitcher workspace={workspace} workspaces={workspaces} />
       </div>
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Workspace } from "@/types/database";
+import Logo from "./Logo";
 
 export default function WorkspaceOnboarding() {
   const router = useRouter();
@@ -77,9 +78,7 @@ export default function WorkspaceOnboarding() {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4">
       <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-8 shadow-xl shadow-brand-900/5">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-lg font-bold text-white">
-            FS
-          </div>
+          <Logo className="mx-auto mb-3 h-11 w-11" />
           <h1 className="text-xl font-semibold text-gray-900">
             {mode === "create" ? "Buat workspace tim" : "Gabung ke workspace"}
           </h1>

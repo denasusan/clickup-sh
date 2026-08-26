@@ -3,6 +3,7 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Logo from "@/components/Logo";
 
 type Mode = "signin" | "signup";
 
@@ -92,9 +93,7 @@ function LoginForm() {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4">
       <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-8 shadow-xl shadow-brand-900/5">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-lg font-bold text-white">
-            FS
-          </div>
+          <Logo className="mx-auto mb-3 h-11 w-11" />
           <h1 className="text-xl font-semibold text-gray-900">Flowspace</h1>
           <p className="mt-1 text-sm text-gray-500">
             Papan kerja tim - task &amp; kanban board.
