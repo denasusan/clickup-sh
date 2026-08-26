@@ -92,6 +92,7 @@ export default function Board({
   }>({ open: false, task: null, defaultStatus: "todo" });
 
   const profiles = useMemo(() => members.map((m) => m.profile), [members]);
+  const canEdit = myRole !== "requester";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -281,6 +282,10 @@ export default function Board({
   }
 
   function openCreateModal(status: TaskStatus) {
+    if (!canEdit) {
+      setShowRequestTask(true);
+      return;
+    }
     setModalState({ open: true, task: null, defaultStatus: status });
   }
 
@@ -395,16 +400,17 @@ export default function Board({
         onExport={handleExportCsv}
         onOpenCalendar={() => setShowCalendar(true)}
         onOpenRequestTask={() => setShowRequestTask(true)}
+        canEdit={canEdit}
       />
 
-      <BoardTabs workspaceId={workspace.id} boards={boards} activeBoardId={board.id} />
+      <BoardTabs workspaceId={workspace.id} boards={boards} activeBoardId={board.id} canEdit={canEdit} />
 
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
+        onDragStart={canEdit ? handleDragStart : undefined}
+        onDragOver={canEdit ? handleDragOver : undefined}
+        onDragEnd={canEdit ? handleDragEnd : undefined}
       >
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 gap-3 overflow-x-auto p-3 sm:gap-4 sm:p-6">
@@ -419,6 +425,7 @@ export default function Board({
                 onAddTask={() => openCreateModal(col.id)}
                 onTaskClick={openEditModal}
                 accentClassName={col.accent}
+                canEdit={canEdit}
               />
             ))}
           </div>
@@ -456,6 +463,7 @@ export default function Board({
           onClose={closeModal}
           onSave={handleSaveTask}
           onDelete={handleDeleteTask}
+          readOnly={!canEdit}
         />
       )}
 

@@ -25,6 +25,7 @@ export default function Header({
   onExport,
   onOpenCalendar,
   onOpenRequestTask,
+  canEdit,
 }: {
   currentUser: { id: string; email: string; full_name: string | null; avatar_url: string | null };
   workspace: Workspace;
@@ -40,6 +41,7 @@ export default function Header({
   onExport: () => void;
   onOpenCalendar: () => void;
   onOpenRequestTask: () => void;
+  canEdit: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -96,14 +98,16 @@ export default function Header({
           <PlusCircle size={14} />
           <span className="hidden sm:inline">Request Task</span>
         </button>
-        <button
-          onClick={onOpenImport}
-          title="Impor"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
-        >
-          <Upload size={14} />
-          <span className="hidden sm:inline">Impor</span>
-        </button>
+        {canEdit && (
+          <button
+            onClick={onOpenImport}
+            title="Impor"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 sm:px-3"
+          >
+            <Upload size={14} />
+            <span className="hidden sm:inline">Impor</span>
+          </button>
+        )}
         <button
           onClick={onExport}
           title="Ekspor"

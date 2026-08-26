@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
 import type { Profile, Task, TaskStatus } from "@/types/database";
 import TaskCard from "./TaskCard";
+
+const PAGE_SIZE = 30;
 
 export default function Column({
   id,
@@ -15,6 +18,7 @@ export default function Column({
   onAddTask,
   onTaskClick,
   accentClassName,
+  canEdit,
 }: {
   id: TaskStatus;
   title: string;
@@ -24,8 +28,19 @@ export default function Column({
   onAddTask: () => void;
   onTaskClick: (task: Task) => void;
   accentClassName: string;
+  canEdit: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Kalau user sudah lihat semua task yang ada, task baru (mis. hasil Request Task)
+  // tetap langsung kelihatan tanpa perlu klik "Muat lainnya".
+  useEffect(() => {
+    setVisibleCount((v) => (v >= tasks.length - 1 ? tasks.length : v));
+  }, [tasks.length]);
+
+  const visibleTasks = tasks.slice(0, visibleCount);
+  const remaining = tasks.length - visibleTasks.length;
 
   return (
     <div className="flex w-[85vw] max-w-80 shrink-0 flex-col rounded-2xl bg-gray-100/70 p-3 sm:w-80">
@@ -52,17 +67,27 @@ export default function Column({
           isOver ? "bg-brand-50" : ""
         }`}
       >
-        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-          {tasks.map((task) => (
+        <SortableContext items={visibleTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+          {visibleTasks.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
               assignee={task.assignee_id ? profilesById[task.assignee_id] ?? null : null}
               commentCount={commentCounts[task.id] ?? 0}
               onClick={() => onTaskClick(task)}
+              draggable={canEdit}
             />
           ))}
         </SortableContext>
+
+        {remaining > 0 && (
+          <button
+            onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+            className="rounded-lg py-2 text-xs font-medium text-gray-500 transition hover:bg-white hover:text-brand-600"
+          >
+            Muat {Math.min(remaining, PAGE_SIZE)} task lainnya ({remaining} tersisa)
+          </button>
+        )}
 
         {tasks.length === 0 && (
           <button

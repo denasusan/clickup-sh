@@ -580,3 +580,93 @@ create trigger set_tasks_status_timestamps
 alter table public.tasks drop constraint if exists tasks_status_check;
 alter table public.tasks add constraint tasks_status_check
   check (status in ('todo', 'in_progress', 'done', 'cancelled'));
+
+-- ---------------------------------------------------------
+-- 16. Role "requester" - anggota yang cuma boleh ajukan task
+--     (Request Task) dan komentar, tidak bisa kelola board atau
+--     ubah/hapus task apapun.
+-- ---------------------------------------------------------
+alter table public.workspace_members drop constraint if exists workspace_members_role_check;
+alter table public.workspace_members add constraint workspace_members_role_check
+  check (role in ('owner', 'member', 'requester'));
+
+-- Helper: true untuk owner/member (yang boleh kelola board & task),
+-- false untuk requester.
+create or replace function public.is_workspace_editor(_workspace_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.workspace_members
+    where workspace_id = _workspace_id
+      and user_id = auth.uid()
+      and role in ('owner', 'member')
+  );
+$$;
+
+-- Board: cuma owner/member yang boleh buat, ubah, hapus board.
+-- Lihat board tetap untuk semua anggota (termasuk requester).
+drop policy if exists "Anggota workspace bisa buat board" on public.boards;
+create policy "Anggota workspace bisa buat board"
+  on public.boards for insert
+  to authenticated
+  with check (public.is_workspace_editor(workspace_id));
+
+drop policy if exists "Anggota workspace bisa update board" on public.boards;
+create policy "Anggota workspace bisa update board"
+  on public.boards for update
+  to authenticated
+  using (public.is_workspace_editor(workspace_id));
+
+drop policy if exists "Anggota workspace bisa hapus board" on public.boards;
+create policy "Anggota workspace bisa hapus board"
+  on public.boards for delete
+  to authenticated
+  using (public.is_workspace_editor(workspace_id));
+
+-- Task: requester cuma boleh insert task baru dengan status todo &
+-- tanpa assignee (sesuai form Request Task), tidak boleh update/hapus
+-- task apapun. Lihat task tetap untuk semua anggota.
+drop policy if exists "Anggota workspace bisa buat task di board-nya" on public.tasks;
+create policy "Anggota workspace bisa buat task di board-nya"
+  on public.tasks for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.boards b
+      where b.id = tasks.board_id
+        and (
+          public.is_workspace_editor(b.workspace_id)
+          or (
+            public.is_workspace_member(b.workspace_id)
+            and tasks.status = 'todo'
+            and tasks.assignee_id is null
+          )
+        )
+    )
+  );
+
+drop policy if exists "Anggota workspace bisa update task di board-nya" on public.tasks;
+create policy "Anggota workspace bisa update task di board-nya"
+  on public.tasks for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.boards b
+      where b.id = tasks.board_id and public.is_workspace_editor(b.workspace_id)
+    )
+  );
+
+drop policy if exists "Anggota workspace bisa hapus task di board-nya" on public.tasks;
+create policy "Anggota workspace bisa hapus task di board-nya"
+  on public.tasks for delete
+  to authenticated
+  using (
+    exists (
+      select 1 from public.boards b
+      where b.id = tasks.board_id and public.is_workspace_editor(b.workspace_id)
+    )
+  );

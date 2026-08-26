@@ -36,15 +36,20 @@ export default function TaskCard({
   commentCount = 0,
   onClick,
   dragging,
+  draggable = true,
 }: {
   task: Task;
   assignee: Profile | null;
   commentCount?: number;
   onClick?: () => void;
   dragging?: boolean;
+  draggable?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: task.id, data: { type: "task", status: task.status } });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    data: { type: "task", status: task.status },
+    disabled: !draggable,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -62,18 +67,19 @@ export default function TaskCard({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
+      {...(draggable ? attributes : {})}
+      {...(draggable ? listeners : {})}
       onClick={onClick}
       className={clsx(
-        "cursor-grab select-none rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:shadow-md active:cursor-grabbing",
+        "select-none rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:shadow-md",
+        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         (isDragging || dragging) && "opacity-50"
       )}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <p
           className={clsx(
-            "text-sm font-medium text-gray-800",
+            "min-w-0 flex-1 break-words text-sm font-medium text-gray-800",
             task.status === "cancelled" && "text-gray-400 line-through"
           )}
         >
@@ -90,7 +96,7 @@ export default function TaskCard({
       </div>
 
       {task.description && (
-        <p className="mb-2 line-clamp-2 text-xs text-gray-500">{task.description}</p>
+        <p className="mb-2 line-clamp-2 break-words text-xs text-gray-500">{task.description}</p>
       )}
 
       {task.team && (

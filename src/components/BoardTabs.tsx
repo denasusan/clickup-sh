@@ -28,14 +28,17 @@ function SortableBoardTab({
   workspaceId,
   active,
   onRequestDelete,
+  canEdit,
 }: {
   board: Board;
   workspaceId: string;
   active: boolean;
   onRequestDelete: (board: Board) => void;
+  canEdit: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: board.id,
+    disabled: !canEdit,
   });
 
   const style = {
@@ -48,13 +51,14 @@ function SortableBoardTab({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(canEdit ? listeners : {})}
       href={`/board/${workspaceId}/${board.id}`}
       onClick={(e) => {
         if (isDragging) e.preventDefault();
       }}
       className={clsx(
-        "group flex cursor-grab select-none items-center gap-1 rounded-lg pl-3 pr-1.5 py-1.5 text-xs font-medium transition active:cursor-grabbing",
+        "group flex select-none items-center gap-1 rounded-lg pl-3 pr-1.5 py-1.5 text-xs font-medium transition",
+        canEdit && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-50",
         active
           ? "bg-brand-50 text-brand-700"
@@ -62,19 +66,21 @@ function SortableBoardTab({
       )}
     >
       {board.name}
-      <button
-        type="button"
-        aria-label={`Hapus board ${board.name}`}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onRequestDelete(board);
-        }}
-        className="rounded p-0.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
-      >
-        <Trash2 size={12} />
-      </button>
+      {canEdit && (
+        <button
+          type="button"
+          aria-label={`Hapus board ${board.name}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRequestDelete(board);
+          }}
+          className="rounded p-0.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+        >
+          <Trash2 size={12} />
+        </button>
+      )}
     </Link>
   );
 }
@@ -83,10 +89,12 @@ export default function BoardTabs({
   workspaceId,
   boards,
   activeBoardId,
+  canEdit,
 }: {
   workspaceId: string;
   boards: Board[];
   activeBoardId: string;
+  canEdit: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -187,48 +195,50 @@ export default function BoardTabs({
                 workspaceId={workspaceId}
                 active={b.id === activeBoardId}
                 onRequestDelete={setDeleteTarget}
+                canEdit={canEdit}
               />
             ))}
           </div>
         </SortableContext>
       </DndContext>
 
-      {creating ? (
-        <form onSubmit={handleCreate} className="flex items-center gap-1">
-          <input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nama board"
-            className="rounded-lg border border-gray-300 px-2 py-1 text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-          />
+      {canEdit &&
+        (creating ? (
+          <form onSubmit={handleCreate} className="flex items-center gap-1">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nama board"
+              className="rounded-lg border border-gray-300 px-2 py-1 text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            />
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-brand-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
+            >
+              Simpan
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCreating(false);
+                setName("");
+              }}
+              className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+            >
+              <X size={14} />
+            </button>
+          </form>
+        ) : (
           <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-brand-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
+            onClick={() => setCreating(true)}
+            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-100"
           >
-            Simpan
+            <Plus size={13} />
+            Board
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setCreating(false);
-              setName("");
-            }}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"
-          >
-            <X size={14} />
-          </button>
-        </form>
-      ) : (
-        <button
-          onClick={() => setCreating(true)}
-          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-100"
-        >
-          <Plus size={13} />
-          Board
-        </button>
-      )}
+        ))}
 
       {deleteTarget && (
         <div

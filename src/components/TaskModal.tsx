@@ -43,6 +43,7 @@ export default function TaskModal({
   onClose,
   onSave,
   onDelete,
+  readOnly = false,
 }: {
   task: Task | null;
   defaultStatus: TaskStatus;
@@ -53,6 +54,7 @@ export default function TaskModal({
   onClose: () => void;
   onSave: (payload: Partial<Task> & { title: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  readOnly?: boolean;
 }) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
@@ -80,7 +82,7 @@ export default function TaskModal({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (readOnly || !title.trim()) return;
     setSaving(true);
     await onSave({
       title: title.trim(),
@@ -124,9 +126,10 @@ export default function TaskModal({
             <input
               autoFocus
               required
+              disabled={readOnly}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               placeholder="Misal: Desain halaman landing"
             />
           </div>
@@ -137,9 +140,10 @@ export default function TaskModal({
             </label>
             <textarea
               rows={3}
+              disabled={readOnly}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               placeholder="Detail tambahan (opsional)"
             />
           </div>
@@ -151,8 +155,9 @@ export default function TaskModal({
               </label>
               <select
                 value={status}
+                disabled={readOnly}
                 onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -167,8 +172,9 @@ export default function TaskModal({
               </label>
               <select
                 value={priority}
+                disabled={readOnly}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               >
                 {PRIORITY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -193,8 +199,9 @@ export default function TaskModal({
               </label>
               <select
                 value={assigneeId}
+                disabled={readOnly}
                 onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               >
                 <option value="">Belum ditugaskan</option>
                 {profiles.map((p) => (
@@ -211,8 +218,9 @@ export default function TaskModal({
               <input
                 type="date"
                 value={dueDate}
+                disabled={readOnly}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               />
             </div>
           </div>
@@ -223,8 +231,9 @@ export default function TaskModal({
             </label>
             <select
               value={team}
+              disabled={readOnly}
               onChange={(e) => setTeam(e.target.value as TaskTeam | "")}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
             >
               <option value="">Pilih tim</option>
               {TEAM_OPTIONS.map((opt) => (
@@ -242,8 +251,9 @@ export default function TaskModal({
               </label>
               <select
                 value={boardId}
+                disabled={readOnly}
                 onChange={(e) => setBoardId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               >
                 {boards.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -251,7 +261,7 @@ export default function TaskModal({
                   </option>
                 ))}
               </select>
-              {boardId !== task.board_id && (
+              {!readOnly && boardId !== task.board_id && (
                 <p className="mt-1 text-[11px] text-amber-600">
                   Task akan dipindahkan ke board ini setelah disimpan.
                 </p>
@@ -259,36 +269,43 @@ export default function TaskModal({
             </div>
           )}
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-            {task ? (
-              <button
-                type="button"
-                onClick={() => onDelete(task.id)}
-                className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50 sm:justify-start"
-              >
-                <Trash2 size={14} />
-                Hapus task
-              </button>
-            ) : (
-              <span className="hidden sm:inline" />
-            )}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 sm:flex-none"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60 sm:flex-none"
-              >
-                {saving ? "Menyimpan..." : task ? "Simpan" : "Tambah Task"}
-              </button>
+          {readOnly ? (
+            <p className="rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-400">
+              Kamu cuma bisa lihat & komentar di task ini. Untuk mengubahnya, minta
+              anggota tim yang mengerjakan.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+              {task ? (
+                <button
+                  type="button"
+                  onClick={() => onDelete(task.id)}
+                  className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50 sm:justify-start"
+                >
+                  <Trash2 size={14} />
+                  Hapus task
+                </button>
+              ) : (
+                <span className="hidden sm:inline" />
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 sm:flex-none"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60 sm:flex-none"
+                >
+                  {saving ? "Menyimpan..." : task ? "Simpan" : "Tambah Task"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </form>
 
         {task && (

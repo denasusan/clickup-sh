@@ -1,7 +1,7 @@
 export type TaskStatus = "todo" | "in_progress" | "done" | "cancelled";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 export type TaskTeam = "product" | "marketing" | "operasional" | "it" | "program";
-export type WorkspaceRole = "owner" | "member";
+export type WorkspaceRole = "owner" | "member" | "requester";
 
 export interface Profile {
   id: string;

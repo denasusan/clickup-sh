@@ -24,6 +24,7 @@ export default function MembersModal({
   const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"member" | "requester">("member");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -61,7 +62,7 @@ export default function MembersModal({
 
     const { error: insertError } = await supabase
       .from("workspace_members")
-      .insert({ workspace_id: workspaceId, user_id: profile.id, role: "member" });
+      .insert({ workspace_id: workspaceId, user_id: profile.id, role: inviteRole });
 
     setSaving(false);
     if (insertError) {
@@ -77,6 +78,15 @@ export default function MembersModal({
     await supabase
       .from("workspace_members")
       .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId);
+    router.refresh();
+  }
+
+  async function handleChangeRole(userId: string, role: "member" | "requester") {
+    await supabase
+      .from("workspace_members")
+      .update({ role })
       .eq("workspace_id", workspaceId)
       .eq("user_id", userId);
     router.refresh();
@@ -115,20 +125,34 @@ export default function MembersModal({
                   <p className="text-xs font-medium text-gray-700">
                     {m.profile.full_name ?? m.profile.email}
                   </p>
-                  <p className="text-[10px] text-gray-400">
-                    {m.role === "owner" ? "Owner" : "Anggota"}
-                  </p>
+                  {!(myRole === "owner" && m.role !== "owner") && (
+                    <p className="text-[10px] text-gray-400">
+                      {m.role === "owner" ? "Owner" : m.role === "requester" ? "Requester" : "Anggota"}
+                    </p>
+                  )}
                 </div>
               </div>
-              {myRole === "owner" && m.profile.id !== currentUserId && (
-                <button
-                  onClick={() => handleRemove(m.profile.id)}
-                  className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
-                  aria-label="Keluarkan anggota"
-                >
-                  <UserMinus size={14} />
-                </button>
-              )}
+              <div className="flex items-center gap-1">
+                {myRole === "owner" && m.role !== "owner" && (
+                  <select
+                    value={m.role}
+                    onChange={(e) => handleChangeRole(m.profile.id, e.target.value as "member" | "requester")}
+                    className="rounded-md border border-gray-200 px-1.5 py-1 text-[10px] text-gray-600 outline-none focus:border-brand-500"
+                  >
+                    <option value="member">Anggota</option>
+                    <option value="requester">Requester</option>
+                  </select>
+                )}
+                {myRole === "owner" && m.profile.id !== currentUserId && (
+                  <button
+                    onClick={() => handleRemove(m.profile.id)}
+                    className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                    aria-label="Keluarkan anggota"
+                  >
+                    <UserMinus size={14} />
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -170,6 +194,14 @@ export default function MembersModal({
                 placeholder="teman@perusahaan.com"
                 className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               />
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as "member" | "requester")}
+                className="rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-600 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              >
+                <option value="member">Anggota</option>
+                <option value="requester">Requester</option>
+              </select>
               <button
                 type="submit"
                 disabled={saving}
@@ -178,6 +210,10 @@ export default function MembersModal({
                 Undang
               </button>
             </div>
+            <p className="text-[11px] text-gray-400">
+              Requester cuma bisa lihat board &amp; ajukan task lewat &quot;Request
+              Task&quot;, tidak bisa kelola board atau ubah task apapun.
+            </p>
             {error && <p className="text-xs text-red-600">{error}</p>}
           </form>
         ) : (
