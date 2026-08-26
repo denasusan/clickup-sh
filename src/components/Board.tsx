@@ -29,6 +29,7 @@ import BoardTabs from "./BoardTabs";
 import Column from "./Column";
 import TaskCard from "./TaskCard";
 import TaskModal from "./TaskModal";
+import RequestTaskModal from "./RequestTaskModal";
 import TeamDashboard from "./TeamDashboard";
 import ImportTasksModal from "./ImportTasksModal";
 import TeamSummarySidebar from "./TeamSummarySidebar";
@@ -38,6 +39,7 @@ const COLUMNS: { id: TaskStatus; title: string; accent: string }[] = [
   { id: "todo", title: "Belum Dikerjakan", accent: "bg-gray-400" },
   { id: "in_progress", title: "Sedang Dikerjakan", accent: "bg-amber-400" },
   { id: "done", title: "Selesai", accent: "bg-emerald-500" },
+  { id: "cancelled", title: "Dibatalkan", accent: "bg-red-400" },
 ];
 
 const PRIORITY_LABEL: Record<TaskPriority, string> = {
@@ -82,6 +84,7 @@ export default function Board({
   const [showDashboard, setShowDashboard] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showRequestTask, setShowRequestTask] = useState(false);
   const [modalState, setModalState] = useState<{
     open: boolean;
     task: Task | null;
@@ -209,7 +212,7 @@ export default function Board({
   }, [tasks, search, assigneeFilter]);
 
   const grouped = useMemo(() => {
-    const map: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], done: [] };
+    const map: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], done: [], cancelled: [] };
     for (const t of filteredTasks) map[t.status].push(t);
     (Object.keys(map) as TaskStatus[]).forEach((key) => {
       map[key].sort((a, b) => a.position - b.position);
@@ -335,11 +338,9 @@ export default function Board({
   }
 
   function handleExportCsv() {
-    const statusLabelByKey: Record<TaskStatus, string> = {
-      todo: COLUMNS[0].title,
-      in_progress: COLUMNS[1].title,
-      done: COLUMNS[2].title,
-    };
+    const statusLabelByKey = Object.fromEntries(
+      COLUMNS.map((c) => [c.id, c.title])
+    ) as Record<TaskStatus, string>;
 
     const rows = tasks
       .slice()
@@ -393,6 +394,7 @@ export default function Board({
         onOpenImport={() => setShowImport(true)}
         onExport={handleExportCsv}
         onOpenCalendar={() => setShowCalendar(true)}
+        onOpenRequestTask={() => setShowRequestTask(true)}
       />
 
       <BoardTabs workspaceId={workspace.id} boards={boards} activeBoardId={board.id} />
@@ -480,6 +482,20 @@ export default function Board({
               for (const t of imported) if (!existingIds.has(t.id)) merged.push(t);
               return merged;
             });
+          }}
+        />
+      )}
+
+      {showRequestTask && (
+        <RequestTaskModal
+          boards={boards}
+          defaultBoardId={board.id}
+          currentUserId={currentUser.id}
+          onClose={() => setShowRequestTask(false)}
+          onCreated={(created) => {
+            if (created.board_id === board.id) {
+              setTasks((current) => [...current, created]);
+            }
           }}
         />
       )}

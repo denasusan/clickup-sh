@@ -21,6 +21,11 @@ const STATUS_ALIASES: Record<string, TaskStatus> = {
   selesai: "done",
   completed: "done",
   complete: "done",
+  cancelled: "cancelled",
+  cancel: "cancelled",
+  canceled: "cancelled",
+  dibatalkan: "cancelled",
+  batal: "cancelled",
 };
 
 const PRIORITY_ALIASES: Record<string, TaskPriority> = {
@@ -39,6 +44,7 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
   todo: "Belum Dikerjakan",
   in_progress: "Sedang Dikerjakan",
   done: "Selesai",
+  cancelled: "Dibatalkan",
 };
 
 const PRIORITY_LABEL: Record<TaskPriority, string> = {
@@ -232,9 +238,14 @@ export default function ImportTasksModal({
 
     setImportStage("inserting");
 
-    const nextPosition: Record<TaskStatus, number> = { todo: 0, in_progress: 0, done: 0 };
+    const nextPosition: Record<TaskStatus, number> = {
+      todo: 0,
+      in_progress: 0,
+      done: 0,
+      cancelled: 0,
+    };
     if (!replaceExisting) {
-      (["todo", "in_progress", "done"] as TaskStatus[]).forEach((s) => {
+      (["todo", "in_progress", "done", "cancelled"] as TaskStatus[]).forEach((s) => {
         const max = tasks.filter((t) => t.status === s).reduce((m, t) => Math.max(m, t.position), -1);
         nextPosition[s] = max + 1;
       });

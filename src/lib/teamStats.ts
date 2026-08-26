@@ -9,6 +9,7 @@ export const STATUS_META: { key: TaskStatus; label: string; color: string }[] = 
   { key: "todo", label: "Belum Dikerjakan", color: "#9ca3af" },
   { key: "in_progress", label: "Sedang Dikerjakan", color: "#fbbf24" },
   { key: "done", label: "Selesai", color: "#10b981" },
+  { key: "cancelled", label: "Dibatalkan", color: "#f87171" },
 ];
 
 export interface TeamRow {
@@ -27,14 +28,14 @@ export function computeTeamRows(
     byPerson.set(m.profile.id, {
       key: m.profile.id,
       name: m.profile.full_name ?? m.profile.email ?? "User",
-      counts: { todo: 0, in_progress: 0, done: 0 },
+      counts: { todo: 0, in_progress: 0, done: 0, cancelled: 0 },
       total: 0,
     });
   }
   const unassigned: TeamRow = {
     key: "unassigned",
     name: "Belum ditugaskan",
-    counts: { todo: 0, in_progress: 0, done: 0 },
+    counts: { todo: 0, in_progress: 0, done: 0, cancelled: 0 },
     total: 0,
   };
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, CalendarDays, Download, LogOut, Search, Upload, Users } from "lucide-react";
+import { BarChart3, CalendarDays, Download, LogOut, PlusCircle, Search, Upload, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Workspace, WorkspaceRole } from "@/types/database";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
@@ -23,6 +23,7 @@ export default function Header({
   onOpenImport,
   onExport,
   onOpenCalendar,
+  onOpenRequestTask,
 }: {
   currentUser: { id: string; email: string; full_name: string | null; avatar_url: string | null };
   workspace: Workspace;
@@ -37,6 +38,7 @@ export default function Header({
   onOpenImport: () => void;
   onExport: () => void;
   onOpenCalendar: () => void;
+  onOpenRequestTask: () => void;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -87,6 +89,14 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-1 sm:gap-3">
+        <button
+          onClick={onOpenRequestTask}
+          title="Request Task"
+          className="flex items-center gap-1.5 rounded-lg bg-brand-50 px-2 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-100 sm:px-3"
+        >
+          <PlusCircle size={14} />
+          <span className="hidden sm:inline">Request Task</span>
+        </button>
         <button
           onClick={onOpenImport}
           title="Impor"

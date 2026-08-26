@@ -18,7 +18,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Plus, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import clsx from "clsx";
 import { createClient } from "@/lib/supabase/client";
 import type { Board } from "@/types/database";
@@ -27,10 +27,12 @@ function SortableBoardTab({
   board,
   workspaceId,
   active,
+  onRequestDelete,
 }: {
   board: Board;
   workspaceId: string;
   active: boolean;
+  onRequestDelete: (board: Board) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: board.id,
@@ -52,7 +54,7 @@ function SortableBoardTab({
         if (isDragging) e.preventDefault();
       }}
       className={clsx(
-        "cursor-grab select-none rounded-lg px-3 py-1.5 text-xs font-medium transition active:cursor-grabbing",
+        "group flex cursor-grab select-none items-center gap-1 rounded-lg pl-3 pr-1.5 py-1.5 text-xs font-medium transition active:cursor-grabbing",
         isDragging && "opacity-50",
         active
           ? "bg-brand-50 text-brand-700"
@@ -60,6 +62,19 @@ function SortableBoardTab({
       )}
     >
       {board.name}
+      <button
+        type="button"
+        aria-label={`Hapus board ${board.name}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onRequestDelete(board);
+        }}
+        className="rounded p-0.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+      >
+        <Trash2 size={12} />
+      </button>
     </Link>
   );
 }
@@ -79,6 +94,8 @@ export default function BoardTabs({
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Board | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setOrderedBoards(boards);
@@ -135,13 +152,42 @@ export default function BoardTabs({
     }
   }
 
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+
+    const { error } = await supabase.from("boards").delete().eq("id", deleteTarget.id);
+
+    setDeleting(false);
+    if (error) return;
+
+    const remaining = orderedBoards.filter((b) => b.id !== deleteTarget.id);
+    setOrderedBoards(remaining);
+    setDeleteTarget(null);
+
+    if (deleteTarget.id === activeBoardId) {
+      if (remaining.length > 0) {
+        router.push(`/board/${workspaceId}/${remaining[0].id}`);
+      } else {
+        router.push(`/board/${workspaceId}`);
+      }
+    }
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-1.5 border-b border-gray-200 bg-white px-6 py-2">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={orderedBoards.map((b) => b.id)} strategy={horizontalListSortingStrategy}>
           <div className="flex flex-wrap items-center gap-1.5">
             {orderedBoards.map((b) => (
-              <SortableBoardTab key={b.id} board={b} workspaceId={workspaceId} active={b.id === activeBoardId} />
+              <SortableBoardTab
+                key={b.id}
+                board={b}
+                workspaceId={workspaceId}
+                active={b.id === activeBoardId}
+                onRequestDelete={setDeleteTarget}
+              />
             ))}
           </div>
         </SortableContext>
@@ -182,6 +228,42 @@ export default function BoardTabs({
           <Plus size={13} />
           Board
         </button>
+      )}
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !deleting && setDeleteTarget(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-2 text-lg font-semibold text-gray-800">Hapus board?</h2>
+            <p className="mb-4 text-sm text-gray-500">
+              Board <span className="font-medium text-gray-700">&quot;{deleteTarget.name}&quot;</span>{" "}
+              dan semua task di dalamnya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting ? "Menghapus..." : "Hapus board"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

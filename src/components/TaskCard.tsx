@@ -52,7 +52,11 @@ export default function TaskCard({
   };
 
   const overdue =
-    task.due_date && task.status !== "done" && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date));
+    task.due_date &&
+    task.status !== "done" &&
+    task.status !== "cancelled" &&
+    isPast(new Date(task.due_date)) &&
+    !isToday(new Date(task.due_date));
 
   return (
     <div
@@ -67,7 +71,14 @@ export default function TaskCard({
       )}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-gray-800">{task.title}</p>
+        <p
+          className={clsx(
+            "text-sm font-medium text-gray-800",
+            task.status === "cancelled" && "text-gray-400 line-through"
+          )}
+        >
+          {task.title}
+        </p>
         <span
           className={clsx(
             "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",

@@ -156,7 +156,11 @@ export default function CalendarView({
                 </div>
                 <div className="flex flex-col gap-1">
                   {shown.map((t) => {
-                    const overdue = t.status !== "done" && isPast(day) && !isSameDay(day, new Date());
+                    const overdue =
+                      t.status !== "done" &&
+                      t.status !== "cancelled" &&
+                      isPast(day) &&
+                      !isSameDay(day, new Date());
                     const assignee = t.assignee_id ? profilesById[t.assignee_id] : null;
                     return (
                       <button

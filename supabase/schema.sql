@@ -538,3 +538,45 @@ from ranked
 where b.id = ranked.id;
 
 create index if not exists boards_workspace_id_position_idx on public.boards (workspace_id, position);
+
+-- ---------------------------------------------------------
+-- 14. Catat waktu mulai & selesai pengerjaan task otomatis
+--     berdasarkan perpindahan status
+-- ---------------------------------------------------------
+alter table public.tasks add column if not exists started_at timestamptz;
+alter table public.tasks add column if not exists completed_at timestamptz;
+
+create or replace function public.set_task_status_timestamps()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'INSERT' or new.status is distinct from old.status then
+    if new.status = 'in_progress' then
+      new.started_at := now();
+      new.completed_at := null;
+    elsif new.status = 'done' then
+      new.completed_at := now();
+      if new.started_at is null then
+        new.started_at := new.completed_at;
+      end if;
+    elsif new.status = 'todo' then
+      new.started_at := null;
+      new.completed_at := null;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists set_tasks_status_timestamps on public.tasks;
+create trigger set_tasks_status_timestamps
+  before insert or update on public.tasks
+  for each row execute procedure public.set_task_status_timestamps();
+
+-- ---------------------------------------------------------
+-- 15. Status "Dibatalkan" untuk task
+-- ---------------------------------------------------------
+alter table public.tasks drop constraint if exists tasks_status_check;
+alter table public.tasks add constraint tasks_status_check
+  check (status in ('todo', 'in_progress', 'done', 'cancelled'));

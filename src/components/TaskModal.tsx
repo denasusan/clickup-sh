@@ -2,13 +2,20 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { X, Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import type { Board, Profile, Task, TaskPriority, TaskStatus, TaskTeam } from "@/types/database";
 import TaskComments from "./TaskComments";
+
+function formatTimestamp(value: string) {
+  return format(new Date(value), "d MMM yyyy, HH:mm", { locale: idLocale });
+}
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: "todo", label: "Belum Dikerjakan" },
   { value: "in_progress", label: "Sedang Dikerjakan" },
   { value: "done", label: "Selesai" },
+  { value: "cancelled", label: "Dibatalkan" },
 ];
 
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
@@ -171,6 +178,13 @@ export default function TaskModal({
               </select>
             </div>
           </div>
+
+          {task && (task.started_at || task.completed_at) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500">
+              {task.started_at && <span>Mulai dikerjakan: {formatTimestamp(task.started_at)}</span>}
+              {task.completed_at && <span>Selesai: {formatTimestamp(task.completed_at)}</span>}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
