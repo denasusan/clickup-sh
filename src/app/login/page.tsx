@@ -3,6 +3,7 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteURL } from "@/lib/site-url";
 import Logo from "@/components/Logo";
 
 type Mode = "signin" | "signup";
@@ -36,7 +37,7 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${getSiteURL()}/auth/callback`,
       },
     });
     if (error) {
@@ -73,7 +74,7 @@ function LoginForm() {
         password,
         options: {
           data: { full_name: fullName },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${getSiteURL()}/auth/callback`,
         },
       });
       if (error) {
