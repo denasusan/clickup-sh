@@ -184,28 +184,28 @@ export default function MembersModal({
             <label className="block text-xs font-medium text-gray-600">
               Undang anggota (email Flowspace yang sudah terdaftar)
             </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="teman@perusahaan.com"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            />
             <div className="flex gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="teman@perusahaan.com"
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-              />
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as "member" | "requester")}
-                className="rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-600 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                className="flex-1 rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-600 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               >
                 <option value="member">Anggota</option>
                 <option value="requester">Requester</option>
               </select>
               <button
                 type="submit"
-                disabled={saving}
-                className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
+                disabled={saving || !email.trim()}
+                className="shrink-0 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
               >
-                Undang
+                {saving ? "Mengundang…" : "Undang"}
               </button>
             </div>
             <p className="text-[11px] text-gray-400">
