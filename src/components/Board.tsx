@@ -316,14 +316,15 @@ export default function Board({
     } else {
       const status = (payload.status as TaskStatus) ?? modalState.defaultStatus;
       const columnItems = tasks.filter((t) => t.status === status);
-      const maxPosition = columnItems.reduce((max, t) => Math.max(max, t.position), -1);
+      // Task baru ditaruh di paling atas kolom (position terkecil).
+      const minPosition = columnItems.reduce((min, t) => Math.min(min, t.position), 1);
       const { data, error } = await supabase
         .from("tasks")
         .insert({
           ...payload,
           status,
           board_id: board.id,
-          position: maxPosition + 1,
+          position: minPosition - 1,
           created_by: currentUser.id,
         })
         .select()

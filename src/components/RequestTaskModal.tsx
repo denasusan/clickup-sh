@@ -49,12 +49,13 @@ export default function RequestTaskModal({
     setSaving(true);
     setError(null);
 
-    const { data: lastTask } = await supabase
+    // Task baru ditaruh di paling atas kolom "todo" (position terkecil).
+    const { data: firstTask } = await supabase
       .from("tasks")
       .select("position")
       .eq("board_id", boardId)
       .eq("status", "todo")
-      .order("position", { ascending: false })
+      .order("position", { ascending: true })
       .limit(1)
       .returns<{ position: number }[]>()
       .maybeSingle();
@@ -69,7 +70,7 @@ export default function RequestTaskModal({
         priority,
         team: team || null,
         due_date: dueDate || null,
-        position: (lastTask?.position ?? -1) + 1,
+        position: (firstTask?.position ?? 1) - 1,
         created_by: currentUserId,
       })
       .select()

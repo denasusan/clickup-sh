@@ -245,9 +245,14 @@ export default function ImportTasksModal({
       cancelled: 0,
     };
     if (!replaceExisting) {
+      // Task hasil impor ditaruh di atas task yang sudah ada di tiap kolom,
+      // dengan urutan tetap sesuai baris di file.
+      const validCountByStatus: Record<TaskStatus, number> = { todo: 0, in_progress: 0, done: 0, cancelled: 0 };
+      validRows.forEach((r) => { validCountByStatus[r.status]++; });
       (["todo", "in_progress", "done", "cancelled"] as TaskStatus[]).forEach((s) => {
-        const max = tasks.filter((t) => t.status === s).reduce((m, t) => Math.max(m, t.position), -1);
-        nextPosition[s] = max + 1;
+        const existing = tasks.filter((t) => t.status === s);
+        const min = existing.length ? Math.min(...existing.map((t) => t.position)) : 0;
+        nextPosition[s] = min - validCountByStatus[s];
       });
     }
 
