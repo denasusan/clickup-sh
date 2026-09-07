@@ -19,6 +19,7 @@ export default function Column({
   onTaskClick,
   accentClassName,
   canEdit,
+  canAddTask = true,
 }: {
   id: TaskStatus;
   title: string;
@@ -29,6 +30,7 @@ export default function Column({
   onTaskClick: (task: Task) => void;
   accentClassName: string;
   canEdit: boolean;
+  canAddTask?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -52,13 +54,15 @@ export default function Column({
             {tasks.length}
           </span>
         </div>
-        <button
-          onClick={onAddTask}
-          className="rounded-md p-1 text-gray-400 transition hover:bg-white hover:text-brand-600"
-          aria-label={`Tambah task di ${title}`}
-        >
-          <Plus size={16} />
-        </button>
+        {canAddTask && (
+          <button
+            onClick={onAddTask}
+            className="rounded-md p-1 text-gray-400 transition hover:bg-white hover:text-brand-600"
+            aria-label={`Tambah task di ${title}`}
+          >
+            <Plus size={16} />
+          </button>
+        )}
       </div>
 
       <div
@@ -89,14 +93,19 @@ export default function Column({
           </button>
         )}
 
-        {tasks.length === 0 && (
-          <button
-            onClick={onAddTask}
-            className="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-6 text-xs text-gray-400 transition hover:border-brand-300 hover:text-brand-500"
-          >
-            + Tambah task
-          </button>
-        )}
+        {tasks.length === 0 &&
+          (canAddTask ? (
+            <button
+              onClick={onAddTask}
+              className="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-6 text-xs text-gray-400 transition hover:border-brand-300 hover:text-brand-500"
+            >
+              + Tambah task
+            </button>
+          ) : (
+            <div className="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-6 text-xs text-gray-300">
+              Belum ada task
+            </div>
+          ))}
       </div>
     </div>
   );
