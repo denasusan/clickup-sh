@@ -32,14 +32,14 @@ const TEAM_LABEL: Record<NonNullable<Task["team"]>, string> = {
 
 export default function TaskCard({
   task,
-  assignee,
+  assignees,
   commentCount = 0,
   onClick,
   dragging,
   draggable = true,
 }: {
   task: Task;
-  assignee: Profile | null;
+  assignees: Profile[];
   commentCount?: number;
   onClick?: () => void;
   dragging?: boolean;
@@ -126,12 +126,28 @@ export default function TaskCard({
           )}
         </div>
 
-        {assignee && (
-          <div
-            title={assignee.full_name ?? assignee.email ?? ""}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700"
-          >
-            {initials(assignee.full_name ?? assignee.email ?? "?")}
+        {assignees.length > 0 && (
+          <div className="flex items-center -space-x-1.5">
+            {assignees.slice(0, 3).map((a) => (
+              <div
+                key={a.id}
+                title={a.full_name ?? a.email ?? ""}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-brand-100 text-[10px] font-semibold text-brand-700"
+              >
+                {initials(a.full_name ?? a.email ?? "?")}
+              </div>
+            ))}
+            {assignees.length > 3 && (
+              <div
+                title={assignees
+                  .slice(3)
+                  .map((a) => a.full_name ?? a.email)
+                  .join(", ")}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-gray-100 text-[10px] font-semibold text-gray-500"
+              >
+                +{assignees.length - 3}
+              </div>
+            )}
           </div>
         )}
       </div>

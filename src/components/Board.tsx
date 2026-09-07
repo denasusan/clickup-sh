@@ -120,11 +120,21 @@ export default function Board({
             if (payload.eventType === "INSERT") {
               const newTask = payload.new as Task;
               if (current.some((t) => t.id === newTask.id)) return current;
-              return [...current, newTask];
+              // Payload realtime tabel tasks tidak bawa daftar assignee;
+              // seed dari assignee utama, sisanya menyusul dari channel
+              // task_assignees.
+              return [
+                ...current,
+                { ...newTask, assignee_ids: newTask.assignee_id ? [newTask.assignee_id] : [] },
+              ];
             }
             if (payload.eventType === "UPDATE") {
               const updated = payload.new as Task;
-              return current.map((t) => (t.id === updated.id ? updated : t));
+              return current.map((t) =>
+                t.id === updated.id
+                  ? { ...updated, assignee_ids: t.assignee_ids ?? (updated.assignee_id ? [updated.assignee_id] : []) }
+                  : t
+              );
             }
             if (payload.eventType === "DELETE") {
               const oldTask = payload.old as { id: string };
@@ -132,6 +142,49 @@ export default function Board({
             }
             return current;
           });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, board.id]);
+
+  // --- Realtime: perubahan daftar assignee (many-to-many) ---
+  useEffect(() => {
+    const channel = supabase
+      .channel(`task-assignees-realtime-${board.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "task_assignees" },
+        (payload) => {
+          const row = payload.new as { task_id: string; user_id: string };
+          setTasks((current) =>
+            current.map((t) => {
+              if (t.id !== row.task_id) return t;
+              const ids = t.assignee_ids ?? (t.assignee_id ? [t.assignee_id] : []);
+              if (ids.includes(row.user_id)) return t;
+              const next = [...ids, row.user_id];
+              return { ...t, assignee_ids: next, assignee_id: t.assignee_id ?? next[0] };
+            })
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "task_assignees" },
+        (payload) => {
+          const row = payload.old as { task_id: string; user_id: string };
+          setTasks((current) =>
+            current.map((t) => {
+              if (t.id !== row.task_id) return t;
+              const next = (t.assignee_ids ?? (t.assignee_id ? [t.assignee_id] : [])).filter(
+                (id) => id !== row.user_id
+              );
+              return { ...t, assignee_ids: next, assignee_id: next[0] ?? null };
+            })
+          );
         }
       )
       .subscribe();
@@ -205,9 +258,10 @@ export default function Board({
     const query = search.trim().toLowerCase();
     return tasks.filter((t) => {
       const matchSearch = !query || t.title.toLowerCase().includes(query);
+      const ids = t.assignee_ids ?? (t.assignee_id ? [t.assignee_id] : []);
       const matchAssignee =
         assigneeFilter === "all" ||
-        (assigneeFilter === "unassigned" ? t.assignee_id === null : t.assignee_id === assigneeFilter);
+        (assigneeFilter === "unassigned" ? ids.length === 0 : ids.includes(assigneeFilter));
       return matchSearch && matchAssignee;
     });
   }, [tasks, search, assigneeFilter]);
@@ -297,31 +351,62 @@ export default function Board({
     setModalState({ open: false, task: null, defaultStatus: "todo" });
   }
 
-  async function handleSaveTask(payload: Partial<Task> & { title: string }) {
+  // Selaraskan baris di task_assignees dengan daftar assignee terpilih.
+  async function syncAssignees(taskId: string, prevIds: string[], nextIds: string[]) {
+    const toAdd = nextIds.filter((id) => !prevIds.includes(id));
+    const toRemove = prevIds.filter((id) => !nextIds.includes(id));
+    await Promise.all([
+      toAdd.length > 0
+        ? supabase
+            .from("task_assignees")
+            .insert(toAdd.map((user_id) => ({ task_id: taskId, user_id })))
+        : Promise.resolve(),
+      toRemove.length > 0
+        ? supabase
+            .from("task_assignees")
+            .delete()
+            .eq("task_id", taskId)
+            .in("user_id", toRemove)
+        : Promise.resolve(),
+    ]);
+  }
+
+  async function handleSaveTask(
+    payload: Partial<Task> & { title: string; assignee_ids: string[] }
+  ) {
+    const { assignee_ids: nextAssigneeIds, ...taskFields } = payload;
+    const primaryAssignee = nextAssigneeIds[0] ?? null;
+
     if (modalState.task) {
+      const prevIds =
+        modalState.task.assignee_ids ??
+        (modalState.task.assignee_id ? [modalState.task.assignee_id] : []);
       const { data, error } = await supabase
         .from("tasks")
-        .update(payload)
+        .update({ ...taskFields, assignee_id: primaryAssignee })
         .eq("id", modalState.task.id)
         .select()
         .returns<Task[]>()
         .single();
       if (!error && data) {
+        await syncAssignees(data.id, prevIds, nextAssigneeIds);
+        const enriched = { ...data, assignee_ids: nextAssigneeIds };
         setTasks((current) =>
           data.board_id !== board.id
             ? current.filter((t) => t.id !== data.id)
-            : current.map((t) => (t.id === data.id ? data : t))
+            : current.map((t) => (t.id === data.id ? enriched : t))
         );
       }
     } else {
-      const status = (payload.status as TaskStatus) ?? modalState.defaultStatus;
+      const status = (taskFields.status as TaskStatus) ?? modalState.defaultStatus;
       const columnItems = tasks.filter((t) => t.status === status);
       // Task baru ditaruh di paling atas kolom (position terkecil).
       const minPosition = columnItems.reduce((min, t) => Math.min(min, t.position), 1);
       const { data, error } = await supabase
         .from("tasks")
         .insert({
-          ...payload,
+          ...taskFields,
+          assignee_id: primaryAssignee,
           status,
           board_id: board.id,
           position: minPosition - 1,
@@ -331,7 +416,8 @@ export default function Board({
         .returns<Task[]>()
         .single();
       if (!error && data) {
-        setTasks((current) => [...current, data]);
+        await syncAssignees(data.id, [], nextAssigneeIds);
+        setTasks((current) => [...current, { ...data, assignee_ids: nextAssigneeIds }]);
       }
     }
     closeModal();
@@ -355,15 +441,17 @@ export default function Board({
         return statusDiff !== 0 ? statusDiff : a.position - b.position;
       })
       .map((t) => {
-        const assignee = t.assignee_id ? profilesById[t.assignee_id] : null;
+        const assignees = (t.assignee_ids ?? (t.assignee_id ? [t.assignee_id] : []))
+          .map((id) => profilesById[id])
+          .filter((p): p is Profile => Boolean(p));
         const creator = t.created_by ? profilesById[t.created_by] : null;
         return {
           judul: t.title,
           deskripsi: t.description ?? "",
           status: statusLabelByKey[t.status],
           prioritas: PRIORITY_LABEL[t.priority],
-          ditugaskan_ke: assignee?.full_name ?? assignee?.email ?? "",
-          email_assignee: assignee?.email ?? "",
+          ditugaskan_ke: assignees.map((a) => a.full_name ?? a.email ?? "").join(", "),
+          email_assignee: assignees.map((a) => a.email).filter(Boolean).join(", "),
           tenggat: t.due_date ?? "",
           dibuat_oleh: creator?.full_name ?? creator?.email ?? "",
           dibuat_pada: new Date(t.created_at).toLocaleString("id-ID"),
@@ -445,7 +533,9 @@ export default function Board({
             <div className="w-80 rotate-2">
               <TaskCard
                 task={activeTask}
-                assignee={activeTask.assignee_id ? profilesById[activeTask.assignee_id] ?? null : null}
+                assignees={(activeTask.assignee_ids ?? (activeTask.assignee_id ? [activeTask.assignee_id] : []))
+                  .map((id) => profilesById[id])
+                  .filter((p): p is Profile => Boolean(p))}
                 commentCount={commentCounts[activeTask.id] ?? 0}
                 dragging
               />
@@ -504,7 +594,7 @@ export default function Board({
           onClose={() => setShowRequestTask(false)}
           onCreated={(created) => {
             if (created.board_id === board.id) {
-              setTasks((current) => [...current, created]);
+              setTasks((current) => [...current, { ...created, assignee_ids: [] }]);
             }
           }}
         />

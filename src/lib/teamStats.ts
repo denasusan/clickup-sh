@@ -40,10 +40,19 @@ export function computeTeamRows(
   };
 
   for (const t of tasks) {
-    const row = t.assignee_id ? byPerson.get(t.assignee_id) : undefined;
-    const target = row ?? unassigned;
-    target.counts[t.status] += 1;
-    target.total += 1;
+    const ids = t.assignee_ids ?? (t.assignee_id ? [t.assignee_id] : []);
+    if (ids.length === 0) {
+      unassigned.counts[t.status] += 1;
+      unassigned.total += 1;
+      continue;
+    }
+    // Task dengan beberapa assignee dihitung untuk tiap orang.
+    for (const id of ids) {
+      const row = byPerson.get(id);
+      if (!row) continue;
+      row.counts[t.status] += 1;
+      row.total += 1;
+    }
   }
 
   const result = Array.from(byPerson.values());

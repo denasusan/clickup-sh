@@ -76,7 +76,9 @@ export default function Column({
             <TaskCard
               key={task.id}
               task={task}
-              assignee={task.assignee_id ? profilesById[task.assignee_id] ?? null : null}
+              assignees={(task.assignee_ids ?? (task.assignee_id ? [task.assignee_id] : []))
+                .map((assigneeId) => profilesById[assigneeId])
+                .filter((p): p is Profile => Boolean(p))}
               commentCount={commentCounts[task.id] ?? 0}
               onClick={() => onTaskClick(task)}
               draggable={canEdit}

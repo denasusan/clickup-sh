@@ -52,7 +52,7 @@ export default function TaskModal({
   boards: Board[];
   currentBoardId: string;
   onClose: () => void;
-  onSave: (payload: Partial<Task> & { title: string }) => Promise<void>;
+  onSave: (payload: Partial<Task> & { title: string; assignee_ids: string[] }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   readOnly?: boolean;
 }) {
@@ -60,7 +60,9 @@ export default function TaskModal({
   const [description, setDescription] = useState(task?.description ?? "");
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? defaultStatus);
   const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "medium");
-  const [assigneeId, setAssigneeId] = useState<string>(task?.assignee_id ?? "");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    task?.assignee_ids ?? (task?.assignee_id ? [task.assignee_id] : [])
+  );
   const [dueDate, setDueDate] = useState<string>(task?.due_date ?? "");
   const [team, setTeam] = useState<TaskTeam | "">(task?.team ?? "");
   const [boardId, setBoardId] = useState<string>(task?.board_id ?? currentBoardId);
@@ -89,7 +91,7 @@ export default function TaskModal({
       description: description.trim() || null,
       status,
       priority,
-      assignee_id: assigneeId || null,
+      assignee_ids: assigneeIds,
       due_date: dueDate || null,
       team: team || null,
       ...(task ? { board_id: boardId } : {}),
@@ -192,25 +194,50 @@ export default function TaskModal({
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
-                Ditugaskan ke
-              </label>
-              <select
-                value={assigneeId}
-                disabled={readOnly}
-                onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
-              >
-                <option value="">Belum ditugaskan</option>
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              Ditugaskan ke
+              {assigneeIds.length > 0 && (
+                <span className="ml-1 font-normal text-gray-400">({assigneeIds.length})</span>
+              )}
+            </label>
+            <div className="max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-gray-300 p-1">
+              {profiles.length === 0 && (
+                <p className="px-2 py-1.5 text-xs text-gray-400">Belum ada anggota.</p>
+              )}
+              {profiles.map((p) => {
+                const checked = assigneeIds.includes(p.id);
+                return (
+                  <label
+                    key={p.id}
+                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+                      readOnly ? "cursor-default" : "hover:bg-gray-50"
+                    } ${checked ? "text-gray-800" : "text-gray-600"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={readOnly}
+                      checked={checked}
+                      onChange={(e) =>
+                        setAssigneeIds((current) =>
+                          e.target.checked
+                            ? [...current, p.id]
+                            : current.filter((id) => id !== p.id)
+                        )
+                      }
+                      className="rounded border-gray-300"
+                    />
                     {p.full_name ?? p.email}
-                  </option>
-                ))}
-              </select>
+                  </label>
+                );
+              })}
             </div>
+            {assigneeIds.length === 0 && (
+              <p className="mt-1 text-[11px] text-gray-400">Belum ditugaskan ke siapa pun.</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">
                 Tenggat waktu
@@ -223,25 +250,24 @@ export default function TaskModal({
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              Request dari tim
-            </label>
-            <select
-              value={team}
-              disabled={readOnly}
-              onChange={(e) => setTeam(e.target.value as TaskTeam | "")}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
-            >
-              <option value="">Pilih tim</option>
-              {TEAM_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">
+                Request dari tim
+              </label>
+              <select
+                value={team}
+                disabled={readOnly}
+                onChange={(e) => setTeam(e.target.value as TaskTeam | "")}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:text-gray-500"
+              >
+                <option value="">Pilih tim</option>
+                {TEAM_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {task && boards.length > 1 && (
