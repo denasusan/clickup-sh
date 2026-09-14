@@ -83,7 +83,7 @@ interface ParsedRow {
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
-  assigneeId: string | null;
+  assigneeIds: string[];
   assigneeText: string;
   dueDate: string | null;
   team: TaskTeam | null;
@@ -178,12 +178,22 @@ export default function ImportTasksModal({
             else warnings.push(`Prioritas "${raw.prioritas}" tidak dikenali, dipakai "Sedang"`);
           }
 
+          // assignee_email bisa berisi beberapa email, dipisah koma / titik-koma.
           const assigneeText = (raw.assignee_email ?? raw.assignee ?? "").trim();
-          let assigneeId: string | null = null;
+          const assigneeIds: string[] = [];
           if (assigneeText) {
-            const found = membersByEmail[assigneeText.toLowerCase()];
-            if (found) assigneeId = found.id;
-            else warnings.push(`Assignee "${assigneeText}" tidak ditemukan di anggota workspace, dikosongkan`);
+            const emails = assigneeText
+              .split(/[;,]/)
+              .map((e) => e.trim())
+              .filter(Boolean);
+            for (const email of emails) {
+              const found = membersByEmail[email.toLowerCase()];
+              if (found) {
+                if (!assigneeIds.includes(found.id)) assigneeIds.push(found.id);
+              } else {
+                warnings.push(`Assignee "${email}" tidak ditemukan di anggota workspace, dilewati`);
+              }
+            }
           }
 
           const dueRaw = (raw.tenggat ?? raw.due_date ?? "").trim();
@@ -205,7 +215,7 @@ export default function ImportTasksModal({
             description: (raw.deskripsi ?? raw.description ?? "").trim() || null,
             status,
             priority,
-            assigneeId,
+            assigneeIds,
             assigneeText,
             dueDate,
             team,
@@ -245,9 +255,14 @@ export default function ImportTasksModal({
       cancelled: 0,
     };
     if (!replaceExisting) {
+      // Task hasil impor ditaruh di atas task yang sudah ada di tiap kolom,
+      // dengan urutan tetap sesuai baris di file.
+      const validCountByStatus: Record<TaskStatus, number> = { todo: 0, in_progress: 0, done: 0, cancelled: 0 };
+      validRows.forEach((r) => { validCountByStatus[r.status]++; });
       (["todo", "in_progress", "done", "cancelled"] as TaskStatus[]).forEach((s) => {
-        const max = tasks.filter((t) => t.status === s).reduce((m, t) => Math.max(m, t.position), -1);
-        nextPosition[s] = max + 1;
+        const existing = tasks.filter((t) => t.status === s);
+        const min = existing.length ? Math.min(...existing.map((t) => t.position)) : 0;
+        nextPosition[s] = min - validCountByStatus[s];
       });
     }
 
@@ -257,7 +272,7 @@ export default function ImportTasksModal({
       description: r.description,
       status: r.status,
       priority: r.priority,
-      assignee_id: r.assigneeId,
+      assignee_id: r.assigneeIds[0] ?? null,
       due_date: r.dueDate,
       team: r.team,
       position: nextPosition[r.status]++,
@@ -265,6 +280,8 @@ export default function ImportTasksModal({
 
     const CHUNK = 200;
     const inserted: Task[] = [];
+    // task_assignees ditulis setelah task, dikorelasikan lewat urutan baris
+    // (PostgREST mempertahankan urutan input pada INSERT ... RETURNING).
     for (let i = 0; i < payload.length; i += CHUNK) {
       const chunk = payload.slice(i, i + CHUNK);
       const { data, error } = await supabase.from("tasks").insert(chunk).select().returns<Task[]>();
@@ -272,16 +289,34 @@ export default function ImportTasksModal({
         setImportError(error.message);
         setImporting(false);
         setImportStage(null);
-        if (inserted.length > 0) onImported(inserted, replaceExisting);
+        if (inserted.length > 0) {
+          onImported(
+            inserted.map((t, idx) => ({ ...t, assignee_ids: validRows[idx]?.assigneeIds ?? [] })),
+            replaceExisting
+          );
+        }
         return;
       }
       if (data) inserted.push(...data);
       setImportProgress(inserted.length);
     }
 
+    const assigneeJunction: { task_id: string; user_id: string }[] = [];
+    inserted.forEach((task, idx) => {
+      for (const userId of validRows[idx]?.assigneeIds ?? []) {
+        assigneeJunction.push({ task_id: task.id, user_id: userId });
+      }
+    });
+    for (let i = 0; i < assigneeJunction.length; i += CHUNK) {
+      await supabase.from("task_assignees").insert(assigneeJunction.slice(i, i + CHUNK));
+    }
+
     setImporting(false);
     setImportStage(null);
-    onImported(inserted, replaceExisting);
+    onImported(
+      inserted.map((t, idx) => ({ ...t, assignee_ids: validRows[idx]?.assigneeIds ?? [] })),
+      replaceExisting
+    );
     onClose();
   }
 
@@ -309,7 +344,9 @@ export default function ImportTasksModal({
           <code className="rounded bg-gray-100 px-1 py-0.5">
             judul, deskripsi, status, prioritas, assignee_email, tenggat, team
           </code>
-          . Cuma <code className="rounded bg-gray-100 px-1 py-0.5">judul</code> yang wajib diisi.
+          . Cuma <code className="rounded bg-gray-100 px-1 py-0.5">judul</code> yang wajib diisi.{" "}
+          <code className="rounded bg-gray-100 px-1 py-0.5">assignee_email</code> boleh diisi
+          beberapa email sekaligus, dipisah koma.
         </p>
 
         <div className="mb-4 flex flex-wrap items-center gap-2">

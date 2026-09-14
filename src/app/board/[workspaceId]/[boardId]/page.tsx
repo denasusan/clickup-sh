@@ -84,6 +84,31 @@ export default async function BoardPage({
     .returns<Profile[]>()
     .single();
 
+  // Gabungkan daftar assignee (many-to-many) ke tiap task. Fallback ke
+  // assignee_id tunggal kalau belum ada baris di task_assignees.
+  const taskRows = tasks ?? [];
+  let initialTasks: Task[] = taskRows;
+  if (taskRows.length > 0) {
+    const { data: assigneeRows } = await supabase
+      .from("task_assignees")
+      .select("task_id, user_id")
+      .in(
+        "task_id",
+        taskRows.map((t) => t.id)
+      )
+      .returns<{ task_id: string; user_id: string }[]>();
+    const idsByTask = new Map<string, string[]>();
+    for (const row of assigneeRows ?? []) {
+      const list = idsByTask.get(row.task_id) ?? [];
+      list.push(row.user_id);
+      idsByTask.set(row.task_id, list);
+    }
+    initialTasks = taskRows.map((t) => ({
+      ...t,
+      assignee_ids: idsByTask.get(t.id) ?? (t.assignee_id ? [t.assignee_id] : []),
+    }));
+  }
+
   const workspaces = (myWorkspaces ?? [])
     .map((m) => m.workspaces)
     .filter((w): w is Workspace => Boolean(w));
@@ -100,7 +125,7 @@ export default async function BoardPage({
       boards={boards ?? []}
       members={members}
       myRole={myMembership?.role ?? "member"}
-      initialTasks={tasks ?? []}
+      initialTasks={initialTasks}
       currentUser={{
         id: user.id,
         email: user.email ?? "",

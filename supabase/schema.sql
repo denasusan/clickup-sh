@@ -670,3 +670,75 @@ create policy "Anggota workspace bisa hapus task di board-nya"
       where b.id = tasks.board_id and public.is_workspace_editor(b.workspace_id)
     )
   );
+
+-- ---------------------------------------------------------
+-- 17. Multi-assignee - satu task bisa ditugaskan ke banyak orang.
+--     tasks.assignee_id dipertahankan sebagai "assignee utama"
+--     (dipakai untuk kompatibilitas realtime & ekspor CSV), daftar
+--     lengkapnya ada di task_assignees.
+-- ---------------------------------------------------------
+create table if not exists public.task_assignees (
+  task_id uuid not null references public.tasks (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (task_id, user_id)
+);
+
+alter table public.task_assignees enable row level security;
+
+create index if not exists task_assignees_task_id_idx on public.task_assignees (task_id);
+create index if not exists task_assignees_user_id_idx on public.task_assignees (user_id);
+
+-- Lihat: semua anggota workspace dari board terkait (termasuk requester).
+drop policy if exists "Anggota workspace bisa lihat assignee task" on public.task_assignees;
+create policy "Anggota workspace bisa lihat assignee task"
+  on public.task_assignees for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.tasks t
+      join public.boards b on b.id = t.board_id
+      where t.id = task_assignees.task_id and public.is_workspace_member(b.workspace_id)
+    )
+  );
+
+-- Tambah/hapus assignee: cuma owner/member (editor) workspace board terkait.
+drop policy if exists "Editor workspace bisa tambah assignee task" on public.task_assignees;
+create policy "Editor workspace bisa tambah assignee task"
+  on public.task_assignees for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.tasks t
+      join public.boards b on b.id = t.board_id
+      where t.id = task_assignees.task_id and public.is_workspace_editor(b.workspace_id)
+    )
+  );
+
+drop policy if exists "Editor workspace bisa hapus assignee task" on public.task_assignees;
+create policy "Editor workspace bisa hapus assignee task"
+  on public.task_assignees for delete
+  to authenticated
+  using (
+    exists (
+      select 1 from public.tasks t
+      join public.boards b on b.id = t.board_id
+      where t.id = task_assignees.task_id and public.is_workspace_editor(b.workspace_id)
+    )
+  );
+
+-- Realtime supaya perubahan assignee tersiar ke semua yang buka board.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'task_assignees'
+  ) then
+    alter publication supabase_realtime add table public.task_assignees;
+  end if;
+end $$;
+
+-- Backfill dari assignee tunggal yang sudah ada. Aman dijalankan ulang.
+insert into public.task_assignees (task_id, user_id)
+select id, assignee_id from public.tasks where assignee_id is not null
+on conflict (task_id, user_id) do nothing;

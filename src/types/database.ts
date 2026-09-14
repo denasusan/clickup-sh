@@ -42,6 +42,8 @@ export interface Task {
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  // Assignee utama (kolom asli). Daftar lengkap ada di task_assignees;
+  // properti assignee_ids diisi di sisi klien setelah join.
   assignee_id: string | null;
   due_date: string | null;
   team: TaskTeam | null;
@@ -51,6 +53,13 @@ export interface Task {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  assignee_ids?: string[];
+}
+
+export interface TaskAssignee {
+  task_id: string;
+  user_id: string;
+  created_at: string;
 }
 
 export interface TaskComment {
@@ -169,6 +178,27 @@ export interface Database {
           {
             foreignKeyName: "task_comments_author_id_fkey";
             columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      task_assignees: {
+        Row: TaskAssignee;
+        Insert: { task_id: string; user_id: string; created_at?: string };
+        Update: Partial<TaskAssignee>;
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "task_assignees_user_id_fkey";
+            columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
