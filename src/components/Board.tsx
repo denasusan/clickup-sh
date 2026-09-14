@@ -198,15 +198,13 @@ export default function Board({
   useEffect(() => {
     let cancelled = false;
     async function loadCounts() {
-      const taskIds = tasks.map((t) => t.id);
-      if (taskIds.length === 0) {
-        if (!cancelled) setCommentCounts({});
-        return;
-      }
+      // Filter lewat join ke tasks.board_id, bukan daftar task_id satu-satu -
+      // board dengan banyak task bikin query .in() jadi URL raksasa dan
+      // ditolak 400 oleh gateway sebelum sampai ke database.
       const { data } = await supabase
         .from("task_comments")
-        .select("task_id")
-        .in("task_id", taskIds)
+        .select("task_id, tasks!inner(board_id)")
+        .eq("tasks.board_id", board.id)
         .returns<{ task_id: string }[]>();
       if (cancelled || !data) return;
       const counts: Record<string, number> = {};
@@ -217,7 +215,7 @@ export default function Board({
     return () => {
       cancelled = true;
     };
-  }, [supabase, tasks.map((t) => t.id).join(",")]);
+  }, [supabase, board.id]);
 
   useEffect(() => {
     const taskIds = new Set(tasks.map((t) => t.id));
