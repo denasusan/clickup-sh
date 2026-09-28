@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import type { Board, Profile, Task, TaskPriority, TaskStatus, TaskTeam } from "@/types/database";
+import type { Board, Profile, Task, TaskPriority, TaskStatus, TaskTeam, WorkspaceRole } from "@/types/database";
 import TaskComments from "./TaskComments";
 
 function formatTimestamp(value: string) {
@@ -12,8 +12,10 @@ function formatTimestamp(value: string) {
 }
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
+  { value: "request", label: "Request Masuk" },
   { value: "todo", label: "Belum Dikerjakan" },
   { value: "in_progress", label: "Sedang Dikerjakan" },
+  { value: "need_review", label: "Perlu Review" },
   { value: "done", label: "Selesai" },
   { value: "cancelled", label: "Dibatalkan" },
 ];
@@ -36,7 +38,7 @@ const TEAM_OPTIONS: { value: TaskTeam; label: string }[] = [
 export default function TaskModal({
   task,
   defaultStatus,
-  profiles,
+  members,
   currentUser,
   boards,
   currentBoardId,
@@ -47,7 +49,7 @@ export default function TaskModal({
 }: {
   task: Task | null;
   defaultStatus: TaskStatus;
-  profiles: Profile[];
+  members: { profile: Profile; role: WorkspaceRole }[];
   currentUser: { id: string; email: string; full_name: string | null };
   boards: Board[];
   currentBoardId: string;
@@ -70,9 +72,17 @@ export default function TaskModal({
 
   const profilesById = useMemo(() => {
     const map: Record<string, Profile> = {};
-    for (const p of profiles) map[p.id] = p;
+    for (const m of members) map[m.profile.id] = m.profile;
     return map;
-  }, [profiles]);
+  }, [members]);
+
+  // Requester tidak boleh ditugaskan task baru - tapi kalau dia kebetulan
+  // sudah ter-assign sebelumnya (mis. di-downgrade jadi requester belakangan),
+  // tetap ditampilkan supaya assignment lama itu kelihatan & bisa dilepas.
+  const assignableMembers = useMemo(
+    () => members.filter((m) => m.role !== "requester" || assigneeIds.includes(m.profile.id)),
+    [members, assigneeIds]
+  );
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -202,10 +212,10 @@ export default function TaskModal({
               )}
             </label>
             <div className="max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-gray-300 p-1">
-              {profiles.length === 0 && (
+              {assignableMembers.length === 0 && (
                 <p className="px-2 py-1.5 text-xs text-gray-400">Belum ada anggota.</p>
               )}
-              {profiles.map((p) => {
+              {assignableMembers.map(({ profile: p }) => {
                 const checked = assigneeIds.includes(p.id);
                 return (
                   <label

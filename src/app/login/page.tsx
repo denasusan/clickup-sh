@@ -2,6 +2,7 @@
 
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getSiteURL } from "@/lib/site-url";
 import Logo from "@/components/Logo";
@@ -25,6 +26,7 @@ function LoginForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
     searchParams.get("error") ? "Login gagal, silakan coba lagi." : null
@@ -91,114 +93,170 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-8 shadow-xl shadow-brand-900/5">
-        <div className="mb-6 text-center">
-          <Logo className="mx-auto mb-3 h-11 w-11" />
-          <h1 className="text-xl font-semibold text-gray-900">Flowspace</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Papan kerja tim - task &amp; kanban board.
-          </p>
-        </div>
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-brand-50 via-white to-brand-100/70">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(75,100,245,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(75,100,245,0.06) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
 
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
-        >
-          <GoogleIcon />
-          Lanjutkan dengan Google
-        </button>
+      <div className="relative flex min-h-screen flex-col">
+        <header className="flex items-center gap-2.5 px-5 py-5 sm:px-10">
+          <Logo className="h-8 w-8" />
+          <span className="text-lg font-semibold text-gray-900">Flowspace</span>
+        </header>
 
-        <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-400">atau</span>
-          <div className="h-px flex-1 bg-gray-200" />
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {mode === "signup" && (
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
-                Nama lengkap
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-                placeholder="Nama kamu"
-              />
+        <div className="flex flex-1 items-center justify-center px-4 pb-12">
+          <div className="w-full max-w-md rounded-2xl border border-black/5 bg-white p-6 shadow-xl shadow-brand-900/10 sm:p-8">
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-100">
+                <Logo className="h-9 w-9" />
+              </div>
+              <h1 className="text-xl font-semibold text-gray-900">
+                {mode === "signin" ? "Selamat datang kembali" : "Buat akun baru"}
+              </h1>
+              <p className="mt-1.5 text-sm text-gray-500">
+                Papan kerja tim &amp; kanban board untuk kolaborasi tim yang lebih rapi.
+              </p>
             </div>
-          )}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-              placeholder="kamu@perusahaan.com"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-              placeholder="Minimal 6 karakter"
-            />
-          </div>
 
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
-              {error}
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+            >
+              <GoogleIcon />
+              Lanjutkan dengan Google
+            </button>
+
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400">
+                {mode === "signin" ? "atau masuk dengan email" : "atau daftar dengan email"}
+              </span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {mode === "signup" && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    Nama lengkap
+                  </label>
+                  <div className="relative">
+                    <User
+                      size={15}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                      placeholder="Nama kamu"
+                    />
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail
+                    size={15}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                    placeholder="kamu@perusahaan.com"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock
+                    size={15}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-9 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                    placeholder="Minimal 6 karakter"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+                  {error}
+                </p>
+              )}
+              {info && (
+                <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-600">
+                  {info}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-medium text-white transition hover:from-brand-500 hover:to-brand-600 disabled:opacity-60"
+              >
+                {loading
+                  ? "Memproses..."
+                  : mode === "signin"
+                  ? "Masuk ke Flowspace"
+                  : "Daftar ke Flowspace"}
+                {!loading && <ArrowRight size={15} />}
+              </button>
+            </form>
+
+            <p className="mt-5 text-center text-xs text-gray-500">
+              {mode === "signin" ? "Belum punya akun?" : "Sudah punya akun?"}{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(mode === "signin" ? "signup" : "signin");
+                  setError(null);
+                  setInfo(null);
+                }}
+                className="font-medium text-brand-600 hover:underline"
+              >
+                {mode === "signin" ? "Daftar di sini" : "Masuk di sini"}
+              </button>
             </p>
-          )}
-          {info && (
-            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-600">
-              {info}
-            </p>
-          )}
+          </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
-          >
-            {loading
-              ? "Memproses..."
-              : mode === "signin"
-              ? "Masuk"
-              : "Daftar"}
-          </button>
-        </form>
-
-        <p className="mt-5 text-center text-xs text-gray-500">
-          {mode === "signin" ? "Belum punya akun?" : "Sudah punya akun?"}{" "}
-          <button
-            type="button"
-            onClick={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
-              setError(null);
-              setInfo(null);
-            }}
-            className="font-medium text-brand-600 hover:underline"
-          >
-            {mode === "signin" ? "Daftar di sini" : "Masuk di sini"}
-          </button>
-        </p>
+        <footer className="pb-6 text-center text-[11px] text-gray-400">
+          © {new Date().getFullYear()} Flowspace
+        </footer>
       </div>
     </main>
   );

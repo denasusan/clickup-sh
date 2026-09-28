@@ -742,3 +742,94 @@ end $$;
 insert into public.task_assignees (task_id, user_id)
 select id, assignee_id from public.tasks where assignee_id is not null
 on conflict (task_id, user_id) do nothing;
+
+-- ---------------------------------------------------------
+-- 18. Status "request" - task yang diajukan requester lewat
+--     "Request Task" masuk dulu ke kolom Request (bukan langsung
+--     "Belum Dikerjakan"), menunggu owner/member meninjau &
+--     mengubah statusnya. Owner/member yang pakai "Request Task"
+--     tetap langsung masuk "todo" seperti sebelumnya, cuma
+--     requester yang dibatasi status ini.
+-- ---------------------------------------------------------
+alter table public.tasks drop constraint if exists tasks_status_check;
+alter table public.tasks add constraint tasks_status_check
+  check (status in ('todo', 'in_progress', 'done', 'cancelled', 'request'));
+
+drop policy if exists "Anggota workspace bisa buat task di board-nya" on public.tasks;
+create policy "Anggota workspace bisa buat task di board-nya"
+  on public.tasks for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.boards b
+      where b.id = tasks.board_id
+        and (
+          public.is_workspace_editor(b.workspace_id)
+          or (
+            public.is_workspace_member(b.workspace_id)
+            and tasks.status = 'request'
+            and tasks.assignee_id is null
+          )
+        )
+    )
+  );
+
+create or replace function public.set_task_status_timestamps()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'INSERT' or new.status is distinct from old.status then
+    if new.status = 'in_progress' then
+      new.started_at := now();
+      new.completed_at := null;
+    elsif new.status = 'done' then
+      new.completed_at := now();
+      if new.started_at is null then
+        new.started_at := new.completed_at;
+      end if;
+    elsif new.status in ('todo', 'request') then
+      new.started_at := null;
+      new.completed_at := null;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- ---------------------------------------------------------
+-- 19. Status "need_review" - tahap sebelum "Selesai", untuk task
+--     yang sudah dikerjakan tapi masih menunggu ditinjau sebelum
+--     benar-benar ditutup.
+-- ---------------------------------------------------------
+alter table public.tasks drop constraint if exists tasks_status_check;
+alter table public.tasks add constraint tasks_status_check
+  check (status in ('todo', 'in_progress', 'done', 'cancelled', 'request', 'need_review'));
+
+create or replace function public.set_task_status_timestamps()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'INSERT' or new.status is distinct from old.status then
+    if new.status = 'in_progress' then
+      new.started_at := now();
+      new.completed_at := null;
+    elsif new.status = 'need_review' then
+      new.completed_at := null;
+      if new.started_at is null then
+        new.started_at := now();
+      end if;
+    elsif new.status = 'done' then
+      new.completed_at := now();
+      if new.started_at is null then
+        new.started_at := new.completed_at;
+      end if;
+    elsif new.status in ('todo', 'request') then
+      new.started_at := null;
+      new.completed_at := null;
+    end if;
+  end if;
+  return new;
+end;
+$$;

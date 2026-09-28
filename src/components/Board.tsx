@@ -36,8 +36,10 @@ import TeamSummarySidebar from "./TeamSummarySidebar";
 import CalendarView from "./CalendarView";
 
 const COLUMNS: { id: TaskStatus; title: string; accent: string }[] = [
+  { id: "request", title: "Request Masuk", accent: "bg-violet-400" },
   { id: "todo", title: "Belum Dikerjakan", accent: "bg-gray-400" },
   { id: "in_progress", title: "Sedang Dikerjakan", accent: "bg-amber-400" },
+  { id: "need_review", title: "Perlu Review", accent: "bg-sky-400" },
   { id: "done", title: "Selesai", accent: "bg-emerald-500" },
   { id: "cancelled", title: "Dibatalkan", accent: "bg-red-400" },
 ];
@@ -265,7 +267,14 @@ export default function Board({
   }, [tasks, search, assigneeFilter]);
 
   const grouped = useMemo(() => {
-    const map: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], done: [], cancelled: [] };
+    const map: Record<TaskStatus, Task[]> = {
+      request: [],
+      todo: [],
+      in_progress: [],
+      need_review: [],
+      done: [],
+      cancelled: [],
+    };
     for (const t of filteredTasks) map[t.status].push(t);
     (Object.keys(map) as TaskStatus[]).forEach((key) => {
       map[key].sort((a, b) => a.position - b.position);
@@ -471,7 +480,7 @@ export default function Board({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-[#f4f5fb]">
+    <div className="flex h-screen flex-col bg-slate-950">
       <Header
         currentUser={currentUser}
         workspace={workspace}
@@ -513,7 +522,7 @@ export default function Board({
                 onTaskClick={openEditModal}
                 accentClassName={col.accent}
                 canEdit={canEdit}
-                canAddTask={col.id !== "cancelled"}
+                canAddTask={col.id !== "cancelled" && col.id !== "request"}
               />
             ))}
           </div>
@@ -546,7 +555,7 @@ export default function Board({
         <TaskModal
           task={modalState.task}
           defaultStatus={modalState.defaultStatus}
-          profiles={profiles}
+          members={members}
           currentUser={currentUser}
           boards={boards}
           currentBoardId={board.id}
@@ -589,6 +598,7 @@ export default function Board({
           boards={boards}
           defaultBoardId={board.id}
           currentUserId={currentUser.id}
+          canEdit={canEdit}
           onClose={() => setShowRequestTask(false)}
           onCreated={(created) => {
             if (created.board_id === board.id) {

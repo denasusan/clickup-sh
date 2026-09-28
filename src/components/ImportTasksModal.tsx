@@ -17,6 +17,11 @@ const STATUS_ALIASES: Record<string, TaskStatus> = {
   "sedang dikerjakan": "in_progress",
   progress: "in_progress",
   doing: "in_progress",
+  need_review: "need_review",
+  "need review": "need_review",
+  "in review": "need_review",
+  review: "need_review",
+  "perlu review": "need_review",
   done: "done",
   selesai: "done",
   completed: "done",
@@ -41,8 +46,10 @@ const PRIORITY_ALIASES: Record<string, TaskPriority> = {
 };
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
+  request: "Request Masuk",
   todo: "Belum Dikerjakan",
   in_progress: "Sedang Dikerjakan",
+  need_review: "Perlu Review",
   done: "Selesai",
   cancelled: "Dibatalkan",
 };
@@ -249,17 +256,26 @@ export default function ImportTasksModal({
     setImportStage("inserting");
 
     const nextPosition: Record<TaskStatus, number> = {
+      request: 0,
       todo: 0,
       in_progress: 0,
+      need_review: 0,
       done: 0,
       cancelled: 0,
     };
     if (!replaceExisting) {
       // Task hasil impor ditaruh di atas task yang sudah ada di tiap kolom,
       // dengan urutan tetap sesuai baris di file.
-      const validCountByStatus: Record<TaskStatus, number> = { todo: 0, in_progress: 0, done: 0, cancelled: 0 };
+      const validCountByStatus: Record<TaskStatus, number> = {
+        request: 0,
+        todo: 0,
+        in_progress: 0,
+        need_review: 0,
+        done: 0,
+        cancelled: 0,
+      };
       validRows.forEach((r) => { validCountByStatus[r.status]++; });
-      (["todo", "in_progress", "done", "cancelled"] as TaskStatus[]).forEach((s) => {
+      (["todo", "in_progress", "need_review", "done", "cancelled"] as TaskStatus[]).forEach((s) => {
         const existing = tasks.filter((t) => t.status === s);
         const min = existing.length ? Math.min(...existing.map((t) => t.position)) : 0;
         nextPosition[s] = min - validCountByStatus[s];

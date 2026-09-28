@@ -24,16 +24,22 @@ export default function RequestTaskModal({
   boards,
   defaultBoardId,
   currentUserId,
+  canEdit,
   onClose,
   onCreated,
 }: {
   boards: Board[];
   defaultBoardId: string;
   currentUserId: string;
+  canEdit: boolean;
   onClose: () => void;
   onCreated: (task: Task) => void;
 }) {
   const supabase = createClient();
+  // Owner/member yang pakai "Request Task" langsung masuk "todo" seperti
+  // sebelumnya (cuma jalan pintas bikin task). Requester dibatasi RLS untuk
+  // insert dengan status "request", menunggu ditinjau owner/member.
+  const targetStatus = canEdit ? "todo" : "request";
   const [boardId, setBoardId] = useState(defaultBoardId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -49,12 +55,12 @@ export default function RequestTaskModal({
     setSaving(true);
     setError(null);
 
-    // Task baru ditaruh di paling atas kolom "todo" (position terkecil).
+    // Task baru ditaruh di paling atas kolom tujuan (position terkecil).
     const { data: firstTask } = await supabase
       .from("tasks")
       .select("position")
       .eq("board_id", boardId)
-      .eq("status", "todo")
+      .eq("status", targetStatus)
       .order("position", { ascending: true })
       .limit(1)
       .returns<{ position: number }[]>()
@@ -66,7 +72,7 @@ export default function RequestTaskModal({
         board_id: boardId,
         title: title.trim(),
         description: description.trim() || null,
-        status: "todo",
+        status: targetStatus,
         priority,
         team: team || null,
         due_date: dueDate || null,
@@ -106,8 +112,9 @@ export default function RequestTaskModal({
         </div>
 
         <p className="mb-4 text-xs text-gray-500">
-          Ajukan task baru ke board tujuan. Task akan langsung masuk ke kolom
-          &quot;Belum Dikerjakan&quot; di board tersebut.
+          {canEdit
+            ? 'Ajukan task baru ke board tujuan. Task akan langsung masuk ke kolom "Belum Dikerjakan" di board tersebut.'
+            : 'Ajukan task baru ke board tujuan. Task akan masuk ke kolom "Request Masuk" dan menunggu ditinjau anggota tim sebelum dikerjakan.'}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

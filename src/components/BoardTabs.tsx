@@ -61,8 +61,8 @@ function SortableBoardTab({
         canEdit && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-50",
         active
-          ? "bg-brand-50 text-brand-700"
-          : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          ? "bg-brand-500/15 text-brand-300"
+          : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
       )}
     >
       {board.name}
@@ -76,7 +76,7 @@ function SortableBoardTab({
             e.stopPropagation();
             onRequestDelete(board);
           }}
-          className="rounded p-0.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+          className="rounded p-0.5 text-slate-500 transition hover:bg-red-500/15 hover:text-red-400"
         >
           <Trash2 size={12} />
         </button>
@@ -184,7 +184,7 @@ export default function BoardTabs({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border-b border-gray-200 bg-white px-6 py-2">
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-800 bg-slate-950 px-6 py-2">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={orderedBoards.map((b) => b.id)} strategy={horizontalListSortingStrategy}>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -210,7 +210,7 @@ export default function BoardTabs({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nama board"
-              className="rounded-lg border border-gray-300 px-2 py-1 text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
             <button
               type="submit"
@@ -225,7 +225,7 @@ export default function BoardTabs({
                 setCreating(false);
                 setName("");
               }}
-              className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+              className="rounded-lg p-1 text-slate-500 hover:bg-slate-800"
             >
               <X size={14} />
             </button>
@@ -233,7 +233,7 @@ export default function BoardTabs({
         ) : (
           <button
             onClick={() => setCreating(true)}
-            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-100"
+            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-slate-800"
           >
             <Plus size={13} />
             Board

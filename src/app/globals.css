@@ -22,7 +22,7 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: #c9cce0;
+  background-color: #334155;
   border-radius: 9999px;
 }
 
