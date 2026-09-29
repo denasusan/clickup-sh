@@ -88,6 +88,12 @@ export default function TaskModal({
     [members, assigneeIds]
   );
 
+  // Requester yang minta task ini boleh menutupnya sendiri begitu statusnya
+  // "Perlu Review" - konfirmasi hasil pengerjaan sudah sesuai permintaan dia,
+  // tanpa perlu dibuka hak edit lain (RLS di DB juga cuma izinkan transisi
+  // need_review -> done ini, khusus buat pembuat task-nya).
+  const canApprove = readOnly && task?.status === "need_review" && task?.created_by === currentUser.id;
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -110,6 +116,23 @@ export default function TaskModal({
       due_date: dueDate || null,
       team: team || null,
       ...(task ? { board_id: boardId } : {}),
+    });
+    submittingRef.current = false;
+    setSaving(false);
+  }
+
+  async function handleApprove() {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSaving(true);
+    await onSave({
+      title: title.trim(),
+      description: description.trim() || null,
+      status: "done",
+      priority,
+      assignee_ids: assigneeIds,
+      due_date: dueDate || null,
+      team: team || null,
     });
     submittingRef.current = false;
     setSaving(false);
@@ -312,10 +335,23 @@ export default function TaskModal({
           )}
 
           {readOnly ? (
-            <p className="rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-400">
-              Kamu cuma bisa lihat & komentar di task ini. Untuk mengubahnya, minta
-              anggota tim yang mengerjakan.
-            </p>
+            <div className="flex flex-col gap-2">
+              <p className="rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-400">
+                {canApprove
+                  ? "Task yang kamu minta sudah dikerjakan dan menunggu review. Kalau hasilnya sudah sesuai, tandai selesai di bawah."
+                  : "Kamu cuma bisa lihat & komentar di task ini. Untuk mengubahnya, minta anggota tim yang mengerjakan."}
+              </p>
+              {canApprove && (
+                <button
+                  type="button"
+                  onClick={handleApprove}
+                  disabled={saving}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {saving ? "Menyimpan..." : "Tandai Selesai"}
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
               {task ? (

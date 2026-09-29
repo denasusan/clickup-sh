@@ -833,3 +833,43 @@ begin
   return new;
 end;
 $$;
+
+-- ---------------------------------------------------------
+-- 20. Requester bisa tutup sendiri task yang dia minta begitu
+--     statusnya "need_review" - konfirmasi hasil kerja sudah sesuai
+--     permintaannya, tanpa perlu dibukakan hak edit lain. Cuma
+--     transisi need_review -> done, dan cuma buat pembuat task-nya
+--     (created_by), bukan requester lain.
+-- ---------------------------------------------------------
+drop policy if exists "Anggota workspace bisa update task di board-nya" on public.tasks;
+create policy "Anggota workspace bisa update task di board-nya"
+  on public.tasks for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.boards b
+      where b.id = tasks.board_id
+        and (
+          public.is_workspace_editor(b.workspace_id)
+          or (
+            public.is_workspace_member(b.workspace_id)
+            and tasks.status = 'need_review'
+            and tasks.created_by = auth.uid()
+          )
+        )
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.boards b
+      where b.id = tasks.board_id
+        and (
+          public.is_workspace_editor(b.workspace_id)
+          or (
+            public.is_workspace_member(b.workspace_id)
+            and tasks.status = 'done'
+            and tasks.created_by = auth.uid()
+          )
+        )
+    )
+  );
