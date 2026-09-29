@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Board, Task, TaskPriority, TaskTeam } from "@/types/database";
@@ -48,10 +48,18 @@ export default function RequestTaskModal({
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Guard sinkron terpisah dari state `saving` - disabled={saving} di tombol
+  // baru berlaku setelah React commit render, ada jeda singkat di mana klik
+  // ganda (double-click, atau klik lagi karena kelihatan lag) masih tembus
+  // dan bikin request terkirim dua kali. Ref di sini dibaca/ditulis langsung
+  // tanpa nunggu render, jadi klik kedua yang masuk sebelum request pertama
+  // selesai langsung ditolak.
+  const submittingRef = useRef(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || submittingRef.current) return;
+    submittingRef.current = true;
     setSaving(true);
     setError(null);
 
@@ -85,6 +93,7 @@ export default function RequestTaskModal({
 
     setSaving(false);
     if (insertError || !data) {
+      submittingRef.current = false;
       setError("Gagal mengirim request. Coba lagi.");
       return;
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -69,6 +69,10 @@ export default function TaskModal({
   const [team, setTeam] = useState<TaskTeam | "">(task?.team ?? "");
   const [boardId, setBoardId] = useState<string>(task?.board_id ?? currentBoardId);
   const [saving, setSaving] = useState(false);
+  // Guard sinkron - lihat komentar serupa di RequestTaskModal. Cegah klik
+  // ganda pada tombol simpan bikin task/comment tersimpan dua kali sebelum
+  // `disabled={saving}` sempat ke-render di layar.
+  const submittingRef = useRef(false);
 
   const profilesById = useMemo(() => {
     const map: Record<string, Profile> = {};
@@ -94,7 +98,8 @@ export default function TaskModal({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (readOnly || !title.trim()) return;
+    if (readOnly || !title.trim() || submittingRef.current) return;
+    submittingRef.current = true;
     setSaving(true);
     await onSave({
       title: title.trim(),
@@ -106,6 +111,7 @@ export default function TaskModal({
       team: team || null,
       ...(task ? { board_id: boardId } : {}),
     });
+    submittingRef.current = false;
     setSaving(false);
   }
 
