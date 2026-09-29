@@ -12,6 +12,11 @@ body {
   color: #1c1e2e;
 }
 
+.dark body {
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -22,8 +27,12 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: #334155;
+  background-color: #c9cce0;
   border-radius: 9999px;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #334155;
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {

@@ -9,10 +9,10 @@ import { Calendar, MessageSquare } from "lucide-react";
 import type { Profile, Task } from "@/types/database";
 
 const PRIORITY_STYLES: Record<Task["priority"], string> = {
-  low: "bg-slate-800 text-slate-300",
-  medium: "bg-amber-500/15 text-amber-300",
-  high: "bg-orange-500/15 text-orange-300",
-  urgent: "bg-red-500/15 text-red-300",
+  low: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
+  medium: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  high: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
+  urgent: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
 };
 
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
@@ -72,7 +72,7 @@ export default function TaskCard({
       {...(draggable ? listeners : {})}
       onClick={onClick}
       className={clsx(
-        "select-none rounded-xl border border-slate-800 bg-slate-900 p-3 transition hover:border-slate-700",
+        "select-none rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:shadow-none dark:hover:border-slate-700 dark:hover:shadow-none",
         draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         (isDragging || dragging) && "opacity-50"
       )}
@@ -80,8 +80,8 @@ export default function TaskCard({
       <div className="mb-2 flex items-start justify-between gap-2">
         <p
           className={clsx(
-            "min-w-0 flex-1 break-words text-sm font-medium text-slate-100",
-            task.status === "cancelled" && "text-slate-500 line-through"
+            "min-w-0 flex-1 break-words text-sm font-medium text-gray-800 dark:text-slate-100",
+            task.status === "cancelled" && "text-gray-400 line-through dark:text-slate-500"
           )}
         >
           {task.title}
@@ -97,11 +97,11 @@ export default function TaskCard({
       </div>
 
       {task.description && (
-        <p className="mb-2 line-clamp-2 break-words text-xs text-slate-400">{task.description}</p>
+        <p className="mb-2 line-clamp-2 break-words text-xs text-gray-500 dark:text-slate-400">{task.description}</p>
       )}
 
       {task.team && (
-        <span className="mb-2 inline-flex rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+        <span className="mb-2 inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-slate-300">
           {TEAM_LABEL[task.team]}
         </span>
       )}
@@ -112,7 +112,7 @@ export default function TaskCard({
             <span
               className={clsx(
                 "flex items-center gap-1 text-[11px]",
-                overdue ? "font-medium text-red-400" : "text-slate-500"
+                overdue ? "font-medium text-red-600 dark:text-red-400" : "text-gray-400 dark:text-slate-500"
               )}
             >
               <Calendar size={12} />
@@ -120,7 +120,7 @@ export default function TaskCard({
             </span>
           )}
           {commentCount > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500">
               <MessageSquare size={12} />
               {commentCount}
             </span>
@@ -133,7 +133,7 @@ export default function TaskCard({
               <div
                 key={a.id}
                 title={a.full_name ?? a.email ?? ""}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-900 bg-brand-500/20 text-[10px] font-semibold text-brand-300"
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-brand-100 text-[10px] font-semibold text-brand-700 dark:border-slate-900 dark:bg-brand-500/20 dark:text-brand-300"
               >
                 {initials(a.full_name ?? a.email ?? "?")}
               </div>
@@ -144,7 +144,7 @@ export default function TaskCard({
                   .slice(3)
                   .map((a) => a.full_name ?? a.email)
                   .join(", ")}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-900 bg-slate-800 text-[10px] font-semibold text-slate-400"
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-white bg-gray-100 text-[10px] font-semibold text-gray-500 dark:border-slate-900 dark:bg-slate-800 dark:text-slate-400"
               >
                 +{assignees.length - 3}
               </div>

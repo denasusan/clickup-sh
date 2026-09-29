@@ -9,6 +9,7 @@ import Logo from "./Logo";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import MembersModal from "./MembersModal";
 import EditProfileModal from "./EditProfileModal";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header({
   currentUser,
@@ -67,7 +68,7 @@ export default function Header({
   }
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-3 py-3 sm:px-6 sm:py-4">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-950 sm:px-6 sm:py-4">
       <div className="flex items-center gap-3">
         <Logo className="h-9 w-9 shrink-0" />
         <WorkspaceSwitcher workspace={workspace} workspaces={workspaces} />
@@ -77,23 +78,23 @@ export default function Header({
         <div className="relative flex-1">
           <Search
             size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
           />
           <input
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Cari task..."
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-9 pr-12 text-sm text-slate-200 outline-none placeholder:text-slate-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-12 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
           />
-          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:inline-block">
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 sm:inline-block">
             ⌘K
           </kbd>
         </div>
         <select
           value={assigneeFilter}
           onChange={(e) => onAssigneeFilterChange(e.target.value)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 sm:w-auto"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:w-auto"
         >
           <option value="all">Semua anggota</option>
           <option value="unassigned">Belum ditugaskan</option>
@@ -109,7 +110,7 @@ export default function Header({
         <button
           onClick={onOpenRequestTask}
           title="Request Task"
-          className="flex items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-500/15 px-2 py-2 text-xs font-medium text-brand-300 transition hover:bg-brand-500/25 sm:px-3"
+          className="flex items-center gap-1.5 rounded-lg border border-transparent bg-brand-50 px-2 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-300 dark:hover:bg-brand-500/25 sm:px-3"
         >
           <PlusCircle size={14} />
           <span className="hidden sm:inline">Request Task</span>
@@ -118,7 +119,7 @@ export default function Header({
           <button
             onClick={onOpenImport}
             title="Impor"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 sm:px-3"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 sm:px-3"
           >
             <Upload size={14} />
             <span className="hidden sm:inline">Impor</span>
@@ -127,7 +128,7 @@ export default function Header({
         <button
           onClick={onExport}
           title="Ekspor"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 sm:px-3"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 sm:px-3"
         >
           <Download size={14} />
           <span className="hidden sm:inline">Ekspor</span>
@@ -135,7 +136,7 @@ export default function Header({
         <button
           onClick={onOpenCalendar}
           title="Kalender"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 sm:px-3"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 sm:px-3"
         >
           <CalendarDays size={14} />
           <span className="hidden sm:inline">Kalender</span>
@@ -143,7 +144,7 @@ export default function Header({
         <button
           onClick={onOpenDashboard}
           title="Dashboard"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 sm:px-3"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 sm:px-3"
         >
           <BarChart3 size={14} />
           <span className="hidden sm:inline">Dashboard</span>
@@ -151,22 +152,23 @@ export default function Header({
         <button
           onClick={() => setShowMembers(true)}
           title="Anggota"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 sm:px-3"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 sm:px-3"
         >
           <Users size={14} />
           <span className="hidden sm:inline">Anggota</span>
         </button>
+        <ThemeToggle />
         <button
           onClick={() => setShowEditProfile(true)}
           title={`Edit profil (${currentUser.full_name ?? currentUser.email})`}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-xs font-semibold text-brand-300 transition hover:ring-2 hover:ring-brand-500/40"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 transition hover:ring-2 hover:ring-brand-300 dark:bg-brand-500/20 dark:text-brand-300 dark:hover:ring-brand-500/40"
         >
           {(currentUser.full_name ?? currentUser.email).slice(0, 1).toUpperCase()}
         </button>
         <button
           onClick={handleSignOut}
           title="Keluar"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 sm:px-3"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 sm:px-3"
         >
           <LogOut size={14} />
           <span className="hidden sm:inline">Keluar</span>

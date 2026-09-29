@@ -49,15 +49,15 @@ export default function Column({
       <div className="mb-3 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${accentClassName}`} />
-          <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
-          <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-100">{title}</h2>
+          <span className="rounded-full bg-white px-1.5 py-0.5 text-xs text-gray-400 dark:bg-slate-800 dark:text-slate-400">
             {tasks.length}
           </span>
         </div>
         {canAddTask && (
           <button
             onClick={onAddTask}
-            className="rounded-md p-1 text-slate-500 transition hover:bg-slate-800 hover:text-brand-300"
+            className="rounded-md p-1 text-gray-400 transition hover:bg-white hover:text-brand-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-brand-300"
             aria-label={`Tambah task di ${title}`}
           >
             <Plus size={16} />
@@ -68,7 +68,7 @@ export default function Column({
       <div
         ref={setNodeRef}
         className={`flex min-h-[120px] flex-1 flex-col gap-2 overflow-y-auto rounded-xl p-1 transition scrollbar-thin ${
-          isOver ? "bg-brand-500/10" : ""
+          isOver ? "bg-brand-50 dark:bg-brand-500/10" : ""
         }`}
       >
         <SortableContext items={visibleTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
@@ -89,7 +89,7 @@ export default function Column({
         {remaining > 0 && (
           <button
             onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
-            className="rounded-lg py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-brand-300"
+            className="rounded-lg py-2 text-xs font-medium text-gray-500 transition hover:bg-white hover:text-brand-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-brand-300"
           >
             Muat {Math.min(remaining, PAGE_SIZE)} task lainnya ({remaining} tersisa)
           </button>
@@ -99,13 +99,13 @@ export default function Column({
           (canAddTask ? (
             <button
               onClick={onAddTask}
-              className="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-slate-800 py-6 text-xs text-slate-500 transition hover:border-brand-500/50 hover:text-brand-300"
+              className="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-6 text-xs text-gray-400 transition hover:border-brand-300 hover:text-brand-500 dark:border-slate-800 dark:text-slate-500 dark:hover:border-brand-500/50 dark:hover:text-brand-300"
             >
               + Tambah task
             </button>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-800 py-6 text-xs text-slate-600">
-              <Inbox size={18} className="text-slate-700" />
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-6 text-xs text-gray-300 dark:border-slate-800 dark:text-slate-600">
+              <Inbox size={18} className="text-gray-300 dark:text-slate-700" />
               Belum ada task
             </div>
           ))}

@@ -9,19 +9,19 @@ const COLUMN_SKELETONS = [
 
 export default function BoardLoading() {
   return (
-    <div className="flex h-screen flex-col bg-slate-950">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-3 py-3 sm:px-6 sm:py-4">
+    <div className="flex h-screen flex-col bg-[#f4f5fb] dark:bg-slate-950">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-950 sm:px-6 sm:py-4">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-slate-800" />
-          <div className="h-5 w-32 animate-pulse rounded bg-slate-800" />
+          <div className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-200 dark:bg-slate-800" />
+          <div className="h-5 w-32 animate-pulse rounded bg-gray-200 dark:bg-slate-800" />
         </div>
-        <div className="order-3 h-9 w-full max-w-xl flex-1 animate-pulse rounded-lg bg-slate-900 sm:order-none" />
-        <div className="h-8 w-8 animate-pulse rounded-full bg-slate-800" />
+        <div className="order-3 h-9 w-full max-w-xl flex-1 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-900 sm:order-none" />
+        <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-slate-800" />
       </header>
 
-      <div className="flex items-center gap-1.5 border-b border-slate-800 bg-slate-950 px-6 py-2">
+      <div className="flex items-center gap-1.5 border-b border-gray-200 bg-white px-6 py-2 dark:border-slate-800 dark:bg-slate-950">
         {[16, 20, 14].map((w, i) => (
-          <div key={i} className="h-7 w-24 animate-pulse rounded-lg bg-slate-900" style={{ width: `${w * 0.35}rem` }} />
+          <div key={i} className="h-7 w-24 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-900" style={{ width: `${w * 0.35}rem` }} />
         ))}
       </div>
 
@@ -30,16 +30,16 @@ export default function BoardLoading() {
           <div key={col.title} className="flex w-[85vw] max-w-80 shrink-0 flex-col p-1.5 sm:w-80">
             <div className="mb-3 flex items-center gap-2 px-1">
               <span className={`h-2 w-2 rounded-full ${col.accent}`} />
-              <span className="h-3.5 w-24 animate-pulse rounded bg-slate-800" />
+              <span className="h-3.5 w-24 animate-pulse rounded bg-gray-200 dark:bg-slate-800" />
             </div>
             <div className="flex flex-col gap-2">
               {Array.from({ length: col.cards }).map((_, i) => (
-                <div key={i} className="animate-pulse rounded-xl border border-slate-800 bg-slate-900 p-3">
-                  <div className="mb-2 h-3.5 w-4/5 rounded bg-slate-800" />
-                  <div className="mb-3 h-3 w-3/5 rounded bg-slate-800/70" />
+                <div key={i} className="animate-pulse rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+                  <div className="mb-2 h-3.5 w-4/5 rounded bg-gray-200 dark:bg-slate-800" />
+                  <div className="mb-3 h-3 w-3/5 rounded bg-gray-100 dark:bg-slate-800/70" />
                   <div className="flex items-center justify-between">
-                    <div className="h-5 w-5 rounded-full bg-slate-800" />
-                    <div className="h-3 w-10 rounded bg-slate-800/70" />
+                    <div className="h-5 w-5 rounded-full bg-gray-200 dark:bg-slate-800" />
+                    <div className="h-3 w-10 rounded bg-gray-100 dark:bg-slate-800/70" />
                   </div>
                 </div>
               ))}

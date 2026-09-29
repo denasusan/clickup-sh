@@ -480,7 +480,7 @@ export default function Board({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-950">
+    <div className="flex h-screen flex-col bg-[#f4f5fb] dark:bg-slate-950">
       <Header
         currentUser={currentUser}
         workspace={workspace}

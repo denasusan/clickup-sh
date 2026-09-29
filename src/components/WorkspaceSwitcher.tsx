@@ -27,15 +27,15 @@ export default function WorkspaceSwitcher({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
+        className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-100 dark:text-slate-100 dark:hover:bg-slate-800"
       >
         {workspace.name}
-        <ChevronDown size={14} className="text-slate-500" />
+        <ChevronDown size={14} className="text-gray-400 dark:text-slate-500" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-700 bg-slate-900 p-1.5 shadow-lg shadow-black/40">
-          <p className="px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/40">
+          <p className="px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500">
             Workspace
           </p>
           {workspaces.map((w) => (
@@ -43,18 +43,18 @@ export default function WorkspaceSwitcher({
               key={w.id}
               href={`/board/${w.id}`}
               onClick={() => setOpen(false)}
-              className={`block rounded-lg px-2 py-1.5 text-sm transition hover:bg-slate-800 ${
-                w.id === workspace.id ? "font-medium text-brand-300" : "text-slate-300"
+              className={`block rounded-lg px-2 py-1.5 text-sm transition hover:bg-gray-100 dark:hover:bg-slate-800 ${
+                w.id === workspace.id ? "font-medium text-brand-700 dark:text-brand-300" : "text-gray-700 dark:text-slate-300"
               }`}
             >
               {w.name}
             </Link>
           ))}
-          <div className="my-1 h-px bg-slate-800" />
+          <div className="my-1 h-px bg-gray-100 dark:bg-slate-800" />
           <Link
             href="/board/new"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-brand-300 transition hover:bg-brand-500/15"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-brand-600 transition hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/15"
           >
             <Plus size={14} />
             Workspace baru
