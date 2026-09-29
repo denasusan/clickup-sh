@@ -85,11 +85,8 @@ export default function Header({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Cari task..."
-            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-12 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
+            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
           />
-          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 sm:inline-block">
-            ⌘K
-          </kbd>
         </div>
         <select
           value={assigneeFilter}
