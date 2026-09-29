@@ -522,7 +522,7 @@ export default function Board({
                 onTaskClick={openEditModal}
                 accentClassName={col.accent}
                 canEdit={canEdit}
-                canAddTask={col.id !== "cancelled" && col.id !== "request"}
+                canAddTask={canEdit && col.id !== "cancelled" && col.id !== "request"}
               />
             ))}
           </div>
