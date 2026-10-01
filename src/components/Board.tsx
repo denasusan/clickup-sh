@@ -58,6 +58,14 @@ interface CurrentUser {
   avatar_url: string | null;
 }
 
+// Event realtime INSERT bisa datang lebih dulu dari response insert, jadi
+// task yang sama jangan di-append dua kali - ganti kalau id-nya sudah ada.
+function upsertTask(current: Task[], task: Task): Task[] {
+  return current.some((t) => t.id === task.id)
+    ? current.map((t) => (t.id === task.id ? task : t))
+    : [...current, task];
+}
+
 export default function Board({
   workspace,
   workspaces,
@@ -424,7 +432,7 @@ export default function Board({
         .single();
       if (!error && data) {
         await syncAssignees(data.id, [], nextAssigneeIds);
-        setTasks((current) => [...current, { ...data, assignee_ids: nextAssigneeIds }]);
+        setTasks((current) => upsertTask(current, { ...data, assignee_ids: nextAssigneeIds }));
       }
     }
     closeModal();
@@ -602,7 +610,7 @@ export default function Board({
           onClose={() => setShowRequestTask(false)}
           onCreated={(created) => {
             if (created.board_id === board.id) {
-              setTasks((current) => [...current, { ...created, assignee_ids: [] }]);
+              setTasks((current) => upsertTask(current, { ...created, assignee_ids: [] }));
             }
           }}
         />

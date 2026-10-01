@@ -95,7 +95,7 @@ export default function Header({
         >
           <option value="all">Semua anggota</option>
           <option value="unassigned">Belum ditugaskan</option>
-          {members.map((m) => (
+          {members.filter((m) => m.role !== "requester").map((m) => (
             <option key={m.profile.id} value={m.profile.id}>
               {m.profile.full_name ?? m.profile.email}
             </option>
