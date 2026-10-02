@@ -17,6 +17,18 @@ body {
   color: #e2e8f0;
 }
 
+/* Modal form (TaskModal, RequestTaskModal, dst) sengaja belum punya
+   varian dark: - tetap tampil terang di atas dark mode. Tanpa ini,
+   teks input/select-nya ikut warna terang punya ".dark body" di atas
+   sementara background-nya (putih) tetap, jadi nyaris tak terbaca.
+   Selector element di sini spesifisitasnya kalah dari class dark:text-*
+   manapun, jadi komponen yang memang sudah dark-aware tidak terganggu. */
+.dark input,
+.dark select,
+.dark textarea {
+  color: #1c1e2e;
+}
+
 * {
   box-sizing: border-box;
 }
