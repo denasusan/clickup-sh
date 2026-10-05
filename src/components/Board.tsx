@@ -91,6 +91,8 @@ export default function Board({
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [search, setSearch] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [showDashboard, setShowDashboard] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -262,6 +264,18 @@ export default function Board({
     };
   }, [supabase, board.id, tasks.map((t) => t.id).join(",")]);
 
+  // Filter tanggal pakai completed_at - cuma task yang statusnya "done" dan
+  // selesai di rentang itu yang kehitung cocok. Task yang belum selesai jadi
+  // tersembunyi selagi filter ini aktif (konsisten sama panel "Task selesai
+  // per rentang tanggal" di Dashboard Tim).
+  const dateRange = useMemo(() => {
+    if (!fromDate || !toDate || fromDate > toDate) return null;
+    return {
+      from: new Date(`${fromDate}T00:00:00`),
+      to: new Date(`${toDate}T23:59:59.999`),
+    };
+  }, [fromDate, toDate]);
+
   const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
     return tasks.filter((t) => {
@@ -270,9 +284,15 @@ export default function Board({
       const matchAssignee =
         assigneeFilter === "all" ||
         (assigneeFilter === "unassigned" ? ids.length === 0 : ids.includes(assigneeFilter));
-      return matchSearch && matchAssignee;
+      const matchDate =
+        !dateRange ||
+        (t.status === "done" &&
+          Boolean(t.completed_at) &&
+          new Date(t.completed_at as string) >= dateRange.from &&
+          new Date(t.completed_at as string) <= dateRange.to);
+      return matchSearch && matchAssignee && matchDate;
     });
-  }, [tasks, search, assigneeFilter]);
+  }, [tasks, search, assigneeFilter, dateRange]);
 
   const grouped = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = {
@@ -499,6 +519,10 @@ export default function Board({
         onSearchChange={setSearch}
         assigneeFilter={assigneeFilter}
         onAssigneeFilterChange={setAssigneeFilter}
+        fromDate={fromDate}
+        onFromDateChange={setFromDate}
+        toDate={toDate}
+        onToDateChange={setToDate}
         onOpenDashboard={() => setShowDashboard(true)}
         onOpenImport={() => setShowImport(true)}
         onExport={handleExportCsv}
@@ -536,7 +560,7 @@ export default function Board({
           </div>
 
           <TeamSummarySidebar
-            tasks={tasks}
+            tasks={filteredTasks}
             members={members}
             assigneeFilter={assigneeFilter}
             onSelectAssignee={setAssigneeFilter}

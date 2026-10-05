@@ -10,6 +10,7 @@ import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import MembersModal from "./MembersModal";
 import EditProfileModal from "./EditProfileModal";
 import ThemeToggle from "./ThemeToggle";
+import DateRangeFilter from "./DateRangeFilter";
 
 export default function Header({
   currentUser,
@@ -21,6 +22,10 @@ export default function Header({
   onSearchChange,
   assigneeFilter,
   onAssigneeFilterChange,
+  fromDate,
+  onFromDateChange,
+  toDate,
+  onToDateChange,
   onOpenDashboard,
   onOpenImport,
   onExport,
@@ -37,6 +42,10 @@ export default function Header({
   onSearchChange: (value: string) => void;
   assigneeFilter: string;
   onAssigneeFilterChange: (value: string) => void;
+  fromDate: string;
+  onFromDateChange: (value: string) => void;
+  toDate: string;
+  onToDateChange: (value: string) => void;
   onOpenDashboard: () => void;
   onOpenImport: () => void;
   onExport: () => void;
@@ -101,6 +110,12 @@ export default function Header({
             </option>
           ))}
         </select>
+        <DateRangeFilter
+          fromDate={fromDate}
+          onFromDateChange={onFromDateChange}
+          toDate={toDate}
+          onToDateChange={onToDateChange}
+        />
       </div>
 
       <div className="flex items-center gap-1 sm:gap-3">
